@@ -1,0 +1,15 @@
+{
+  "name": "rabbitmq-webserver",
+  "version": "1.0.0",
+  "description": "Simple Node.js webserver that sends messages to RabbitMQ",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "amqplib": "^0.10.3",
+    "express": "^4.19.2"
+  }
+}

@@ -1,0 +1,71 @@
+replicaCount: 1
+
+image:
+  repository: rontz/rabbitmq-consumer
+  pullPolicy: Always
+  tag: "dev-1"
+
+rabbitmq:
+  configMapName: rabbitmq-config
+  secretName: "rabbitmq-credentials"
+
+database:
+  configMapName: postgresql-config
+  secretName: "postgresql-credentials"
+  usernameKey: "postgres-username"
+  passwordKey: "postgres-password"
+
+
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+service:
+  enabled: false
+  # type: ClusterIP
+  # port: 8080
+ingress:
+  enabled: false
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  # hosts:
+  #   - host: chart-example.local
+  #     paths:
+  #       - path: /
+  #         pathType: ImplementationSpecific
+  # tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+serviceAccount:
+  create: false
+
+httpRoute:
+  enabled: false
+
+autoscaling:
+  enabled: false
+  # minReplicas: 1
+  # maxReplicas: 100
+  # targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}

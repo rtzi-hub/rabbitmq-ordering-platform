@@ -1,0 +1,18 @@
+auth:
+  enablePostgresUser: true
+  username: postgresdb
+  database: postgresdb
+  postgresPassword: ""
+  password: ""
+  existingSecret: postgresql-credentials
+
+primary:
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi

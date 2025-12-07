@@ -1,0 +1,14 @@
+# accidental log/output files
+Initializing
+Starting
+Subscribe
+Validating
+Welcome
+NOTICE*
+*.log
+rabbitmq-credentials-*.yaml
+# local env files
+.env
+postgresql-credentials.yaml
+DEPLOYMENT_ORDER_VERIFICATION.md
+rabbitmq.md
