@@ -11,7 +11,6 @@ Event-driven demo of a simple online ticket ordering system built with:
 ---
 
 ## Architecture
-
 1. Client calls `POST /orders` on **order-api**
 2. **order-api**:
    - inserts a row into the `orders` table with status `PENDING`
@@ -22,6 +21,22 @@ Event-driven demo of a simple online ticket ordering system built with:
    - simulates a payment attempt
    - inserts a record into `payments` with `SUCCEEDED` or `FAILED`
    - publishes `payment.succeeded` or `payment.failed` back to `events.topic`
+
+### Project structure
+```bash
+rabbitmq-ordering-platform/
+├─ order-api/                 # Order HTTP API
+├─ payment-service/           # Payment worker
+└─ k8s/
+   ├─ charts/                 # Local Helm charts (order-api, payment-service, etc.)
+   ├─ configmaps/             # Shared nonsecret configuration (RabbitMQ, Postgres)
+   ├─ secrets/                # Secrets manifests (real secrets are .gitignored)
+   ├─ values/
+   │  └─ dev/                 # Dev environment values (RabbitMQ, Postgres, services)
+   └─ scripts/
+      ├─ run-dev.sh           # Spin up full dev stack
+      └─ cleanup-dev.sh       # (optional) tear down / reset dev stack
+```
 
 ---
 
@@ -91,18 +106,3 @@ kubectl exec -n database -it postgresql-0 -- \
   psql -U postgresdb -d postgresdb -c "SELECT id, name FROM shows;"
 ```
 
-### Project structure
-```bash
-rabbitmq-ordering-platform/
-├─ order-api/                 # Order HTTP API
-├─ payment-service/           # Payment worker
-└─ k8s/
-   ├─ charts/                 # Local Helm charts (order-api, payment-service, etc.)
-   ├─ configmaps/             # Shared nonsecret configuration (RabbitMQ, Postgres)
-   ├─ secrets/                # Secrets manifests (real secrets are .gitignored)
-   ├─ values/
-   │  └─ dev/                 # Dev environment values (RabbitMQ, Postgres, services)
-   └─ scripts/
-      ├─ run-dev.sh           # Spin up full dev stack
-      └─ cleanup-dev.sh       # (optional) tear down / reset dev stack
-```
