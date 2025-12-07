@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "order-api-chart.fullname" . }}
+  labels:
+    {{- include "order-api-chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "order-api-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "order-api-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: SERVICE_NAME
+              value: "order-api"
+            - name: RABBITMQ_EXCHANGE_EVENTS
+              value: "events.topic"
+            - name: RABBITMQ_EXCHANGE_DLX
+              value: "dlx.direct"
+          envFrom:
+            - configMapRef:
+                name: rabbitmq-config-apps
+            - configMapRef:
+                name: postgresql-config-apps
+            - secretRef:
+                name: rabbitmq-credentials-apps
+            - secretRef:
+                name: postgresql-credentials-apps
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

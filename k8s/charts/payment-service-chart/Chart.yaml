@@ -1,8 +1,8 @@
 apiVersion: v2
 
-name: consumer-chart
+name: payment-service-chart
 
-description: RabbitMQ consumer service that processes messages and writes to postgresql db
+description: Payment worker that consumes RabbitMQ events and writes to PostgreSQL
 
 # A chart can be either an 'application' or a 'library' chart.
 #

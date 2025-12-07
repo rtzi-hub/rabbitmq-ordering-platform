@@ -1,109 +1,89 @@
-const amqp = require('amqplib');
-const { Pool } = require('pg');
+require("dotenv").config();
+const { getChannel, publishEvent } = require("./lib/rabbit");
+const { query } = require("./lib/postgres");
 
-const {
-  RABBITMQ_HOST,
-  RABBITMQ_PORT,
-  RABBITMQ_USER,
-  RABBITMQ_PASS,
-  QUEUE_NAME,
-  DB_HOST,
-  DB_PORT,
-  DB_NAME,
-  DB_USER,
-  DB_PASSWORD,
-} = process.env;
+const SERVICE_NAME = process.env.SERVICE_NAME || "payment-service";
+const PREFETCH = parseInt(process.env.RABBITMQ_PREFETCH || "10", 10);
 
-if (!RABBITMQ_HOST || !QUEUE_NAME || !DB_HOST) {
-  console.error('[FATAL] Missing required environment variables');
-  process.exit(1);
-}
+async function start() {
+  const channel = await getChannel();
+  await channel.prefetch(PREFETCH);
 
-const amqpUrl = `amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}`;
+  const eventsExchange = process.env.RABBITMQ_EXCHANGE_EVENTS || "events.topic";
+  const dlxExchange = process.env.RABBITMQ_EXCHANGE_DLX || "dlx.direct";
 
-const pgPool = new Pool({
-  host: DB_HOST,
-  port: Number(DB_PORT || 5432),
-  database: DB_NAME,
-  user: DB_USER,
-  password: DB_PASSWORD,
-});
+  const queueName = "payment.order-created.q";
 
-async function ensureTable() {
-  try {
-    await pgPool.query(`
-      CREATE TABLE IF NOT EXISTS processed_messages (
-        id SERIAL PRIMARY KEY,
-        message_id VARCHAR(64),
-        payload TEXT NOT NULL,
-        processed_at TIMESTAMPTZ DEFAULT NOW()
-      );
-    `);
-    console.log('[INFO] DB table ready');
-  } catch (err) {
-    console.error('[ERROR] Failed to ensure DB table:', err.message);
-    throw err;
-  }
-}
-
-async function initDatabase() {
-  while (true) {
-    try {
-      await pgPool.query('SELECT 1');
-      await ensureTable();
-      console.log('[INFO] DB ready');
-      return;
-    } catch (err) {
-      console.error(`[WARN] DB not ready, retrying in 5s: ${err.message}`);
-      await new Promise(resolve => setTimeout(resolve, 5000));
-    }
-  }
-}
-
-async function startConsumer() {
-  await initDatabase();
-
-  const conn = await amqp.connect(amqpUrl);
-  const channel = await conn.createChannel();
-
-  await channel.assertQueue(QUEUE_NAME, {
+  await channel.assertQueue(queueName, {
     durable: true,
+    arguments: {
+      "x-dead-letter-exchange": dlxExchange,
+      "x-dead-letter-routing-key": "events.dlq"
+    }
   });
 
-  channel.prefetch(10);
-  console.log(`[INFO] Waiting for messages on queue: ${QUEUE_NAME}`);
+  await channel.bindQueue(queueName, eventsExchange, "order.created");
 
-  channel.consume(
-    QUEUE_NAME,
-    async (msg) => {
-      if (!msg) return;
-      try {
-        const content = msg.content.toString();
-        let data;
-        try {
-          data = JSON.parse(content);
-        } catch {
-          data = { messageId: null, text: content };
-        }
+  console.log(`[${SERVICE_NAME}] Waiting on ${queueName}`);
 
-        await pgPool.query(
-          'INSERT INTO processed_messages (message_id, payload) VALUES ($1, $2)',
-          [data.messageId || null, content]
+  channel.consume(queueName, async (msg) => {
+    if (!msg) return;
+
+    try {
+      const content = JSON.parse(msg.content.toString());
+      console.log(`[${SERVICE_NAME}] order.created`, content);
+
+      const { messageId, orderId, userId, showId, quantity } = content;
+
+      const existing = await query(
+        "SELECT 1 FROM payments WHERE message_id = $1",
+        [messageId]
+      );
+      if (existing.rowCount > 0) {
+        console.log(
+          `[${SERVICE_NAME}] message ${messageId} already processed`
         );
-
         channel.ack(msg);
-        console.log('[INFO] Processed message:', content);
-      } catch (err) {
-        console.error('[ERROR] Failed to process message:', err);
-        // basic strategy: reject & requeue once, or send to DLQ in later phases
-        channel.nack(msg, false, false); // false requeue ⇒ will rely on DLQ policy later
+        return;
       }
-    },
-    { noAck: false }
-  );
+
+      const success = Math.random() < 0.8;
+      const status = success ? "SUCCEEDED" : "FAILED";
+
+      await query(
+        `INSERT INTO payments (order_id, user_id, amount, status, message_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [orderId, userId, quantity * 100, status, messageId]
+      );
+
+      if (success) {
+        await publishEvent("payment.succeeded", {
+          type: "payment.succeeded",
+          orderId,
+          userId,
+          showId,
+          quantity
+        });
+      } else {
+        await publishEvent("payment.failed", {
+          type: "payment.failed",
+          orderId,
+          userId,
+          showId,
+          quantity,
+          reason: "PAYMENT_GATEWAY_ERROR"
+        });
+      }
+
+      channel.ack(msg);
+    } catch (err) {
+      console.error(`[${SERVICE_NAME}] error`, err);
+      channel.nack(msg, false, false);
+    }
+  });
 }
 
-startConsumer().catch((err) => {
-  console.error('[FATAL] Consumer crashed on startup:', err);
+start().catch((err) => {
+  console.error(`[${SERVICE_NAME}] Fatal`, err);
   process.exit(1);
 });

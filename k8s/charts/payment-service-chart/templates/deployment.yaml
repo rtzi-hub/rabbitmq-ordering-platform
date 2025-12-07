@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "payment-service-chart.fullname" . }}
+  labels:
+    {{- include "payment-service-chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "payment-service-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "payment-service-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: SERVICE_NAME
+              value: "payment-service"
+            - name: RABBITMQ_EXCHANGE_EVENTS
+              value: "events.topic"
+            - name: RABBITMQ_EXCHANGE_DLX
+              value: "dlx.direct"
+            - name: RABBITMQ_PREFETCH
+              value: "10"
+          envFrom:
+            - configMapRef:
+                name: rabbitmq-config-apps
+            - configMapRef:
+                name: postgresql-config-apps
+            - secretRef:
+                name: rabbitmq-credentials-apps
+            - secretRef:
+                name: postgresql-credentials-apps
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

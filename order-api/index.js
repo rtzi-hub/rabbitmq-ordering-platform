@@ -1,124 +1,58 @@
-const express = require('express');
-const amqp = require('amqplib');
+require("dotenv").config();
+const express = require("express");
+const bodyParser = require("body-parser");
 
-const {
-  RABBITMQ_HOST,
-  RABBITMQ_PORT,
-  RABBITMQ_USER,
-  RABBITMQ_PASS,
-  QUEUE_NAME,
-  PORT = 8080,
-} = process.env;
+const { publishEvent } = require("./lib/rabbit");
+const { query } = require("./lib/postgres");
 
-if (!RABBITMQ_USER || !RABBITMQ_PASS) {
-  console.error('❌ RABBITMQ_USER and RABBITMQ_PASS must be set');
-  process.exit(1);
-}
-
-const RABBITMQ_URL = `amqp://${encodeURIComponent(RABBITMQ_USER)}:${encodeURIComponent(
-  RABBITMQ_PASS
-)}@${RABBITMQ_HOST}:${RABBITMQ_PORT}`;
+const SERVICE_NAME = process.env.SERVICE_NAME || "order-api";
 
 const app = express();
+app.use(bodyParser.json());
 
-let amqpConnection;
-let amqpChannel;
-
-/**
- * Connect to RabbitMQ and create a channel + queue
- */
-async function initRabbitMQ() {
-  try {
-    console.log(`🔌 Connecting to RabbitMQ at: ${RABBITMQ_URL}`);
-    amqpConnection = await amqp.connect(RABBITMQ_URL);
-    amqpChannel = await amqpConnection.createChannel();
-    await amqpChannel.assertQueue(QUEUE_NAME, {
-      durable: true,
-    });
-    console.log(`✅ Connected to RabbitMQ, queue ready: ${QUEUE_NAME}`);
-  } catch (err) {
-    console.error('❌ Failed to connect to RabbitMQ:', err.message);
-    // Try again after a short delay
-    setTimeout(initRabbitMQ, 5000);
-  }
-}
-
-/**
- * Health endpoint for Kubernetes liveness/readiness probes
- */
-app.get('/healthz', (req, res) => {
-  if (amqpChannel) {
-    return res.status(200).json({ status: 'ok', rabbitmq: 'connected' });
-  }
-  return res.status(500).json({ status: 'degraded', rabbitmq: 'not_connected' });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", service: SERVICE_NAME });
 });
 
-/**
- * Basic info endpoint
- */
-app.get('/', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'Webserver is running',
-    rabbitmqHost: RABBITMQ_HOST,
-    queue: QUEUE_NAME,
-  });
-});
-
-/**
- * Send message to RabbitMQ queue
- * Example: GET /send?msg=hello
- */
-app.get('/send', async (req, res) => {
-  const msg = req.query.msg || 'hello from webserver';
-
-  if (!amqpChannel) {
-    return res.status(503).json({
-      status: 'error',
-      error: 'RabbitMQ channel not ready yet',
-    });
-  }
-
+app.post("/orders", async (req, res) => {
   try {
-    const buffer = Buffer.from(msg, 'utf8');
-    const ok = amqpChannel.sendToQueue(QUEUE_NAME, buffer, { persistent: true });
+    const { userId, showId, quantity } = req.body;
 
-    if (!ok) {
-      console.warn('⚠️ sendToQueue returned false (internal buffer full)');
+    if (!userId || !showId || !quantity) {
+      return res.status(400).json({
+        error: "userId, showId, quantity are required"
+      });
     }
 
-    console.log(`📨 Sent message to queue "${QUEUE_NAME}":`, msg);
+    const result = await query(
+      `INSERT INTO orders (user_id, show_id, quantity, status)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id`,
+      [userId, showId, quantity, "PENDING"]
+    );
 
-    res.json({
-      status: 'sent',
-      queue: QUEUE_NAME,
-      message: msg,
-    });
+    const orderId = result.rows[0].id;
+
+    const payload = {
+      type: "order.created",
+      orderId,
+      userId,
+      showId,
+      quantity,
+      status: "PENDING"
+    };
+
+    const event = await publishEvent("order.created", payload);
+    console.log("[order-api] Published order.created", event);
+
+    res.status(202).json({ status: "accepted", orderId });
   } catch (err) {
-    console.error('❌ Failed to send message:', err);
-    res.status(500).json({
-      status: 'error',
-      error: 'Failed to send message',
-    });
+    console.error("[order-api] Error in /orders", err);
+    res.status(500).json({ error: "internal_error" });
   }
 });
 
-/**
- * Start server and initialize RabbitMQ connection
- */
-app.listen(PORT, () => {
-  console.log(`🚀 Webserver listening on port ${PORT}`);
-  initRabbitMQ();
+const port = process.env.PORT || 8080;
+app.listen(port, () => {
+  console.log(`[order-api] Listening on port ${port}`);
 });
-
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('🛑 Shutting down webserver...');
-  try {
-    if (amqpChannel) await amqpChannel.close();
-    if (amqpConnection) await amqpConnection.close();
-  } catch (err) {
-    console.error('Error closing RabbitMQ connection:', err.message);
-  }
-  process.exit(0);
-})

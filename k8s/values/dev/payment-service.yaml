@@ -1,0 +1,19 @@
+image:
+  repository: rontz/payment-service
+  tag: "v1"
+
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+
+service:
+  enabled: false
+  type: ClusterIP
+  port: 8080

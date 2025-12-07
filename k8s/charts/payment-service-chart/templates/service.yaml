@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "consumer-chart.fullname" . }}-svc
+  name: {{ include "payment-service-chart.fullname" . }}-svc
   labels:
-    {{- include "consumer-chart.labels" . | nindent 4 }}
+    {{- include "payment-service-chart.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type | default "ClusterIP" }}
   ports:
@@ -13,5 +13,5 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "consumer-chart.selectorLabels" . | nindent 4 }}
+    {{- include "payment-service-chart.selectorLabels" . | nindent 4 }}
 {{- end }}

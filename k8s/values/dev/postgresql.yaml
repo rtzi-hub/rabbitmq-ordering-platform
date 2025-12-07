@@ -1,10 +1,10 @@
 auth:
   enablePostgresUser: true
-  username: postgresdb
-  database: postgresdb
+  username: "postgresdb"
+  database: "postgresdb"
   postgresPassword: ""
   password: ""
-  existingSecret: postgresql-credentials
+  existingSecret: postgresql-credentials-database
 
 primary:
   persistence:

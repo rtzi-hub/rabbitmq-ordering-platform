@@ -1,0 +1,17 @@
+replicaCount: 1
+
+image:
+  repository: rontz/payment-service
+  tag: "v1"
+  pullPolicy: IfNotPresent
+
+resources: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+service:
+  enabled: false
+  type: ClusterIP
+  port: 8080

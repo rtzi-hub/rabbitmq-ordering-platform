@@ -1,6 +1,6 @@
 apiVersion: v2
-name: webserver-chart
-description: Simple Node.js webserver that sends messages to RabbitMQ
+name: order-api-chart
+description: Order API (Node.js) that publishes order.created events to RabbitMQ
 
 # A chart can be either an 'application' or a 'library' chart.
 #

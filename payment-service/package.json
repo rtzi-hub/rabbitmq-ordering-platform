@@ -1,12 +1,13 @@
 {
-    "name": "rabbitmq-consumer",
-    "version": "1.0.0",
-    "main": "index.js",
-    "scripts": {
-      "start": "node index.js"
-    },
-    "dependencies": {
-      "amqplib": "^0.10.3",
-      "pg": "^8.13.0"
-    }
+  "name": "payment-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.0",
+    "dotenv": "^16.0.0",
+    "pg": "^8.12.0"
   }
+}

@@ -1,23 +1,23 @@
-# ====== Builder stage ======
-FROM node:18-alpine AS builder
+# ===== Builder stage =====
+FROM node:22-alpine AS builder
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
-COPY package.json ./
-RUN npm install --only=production
+COPY package*.json ./
+RUN npm ci --omit=dev || npm install --only=production
 
-# ====== Runtime stage ======
-FROM node:18-alpine AS runner
+# ===== Runtime stage =====
+FROM node:22-alpine AS runner
 
-WORKDIR /app
+WORKDIR /usr/src/app
+ENV NODE_ENV=production
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY package.json ./
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+
+COPY package*.json ./
 COPY index.js ./
+COPY lib ./lib
 
-# Use the existing node user
 USER node
 
-EXPOSE 8080
-
-CMD ["npm", "start"]
+CMD ["node", "index.js"]

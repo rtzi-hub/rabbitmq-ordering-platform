@@ -1,15 +1,16 @@
 {
-  "name": "rabbitmq-webserver",
+  "name": "order-api",
   "version": "1.0.0",
-  "description": "Simple Node.js webserver that sends messages to RabbitMQ",
+  "description": "Order API that creates orders and publishes order.created events to RabbitMQ",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "author": "",
-  "license": "MIT",
   "dependencies": {
-    "amqplib": "^0.10.3",
-    "express": "^4.19.2"
+    "amqplib": "^0.10.0",
+    "body-parser": "^1.20.0",
+    "dotenv": "^16.0.0",
+    "express": "^4.18.0",
+    "pg": "^8.12.0"
   }
 }

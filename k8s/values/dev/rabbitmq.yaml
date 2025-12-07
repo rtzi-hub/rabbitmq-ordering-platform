@@ -14,8 +14,8 @@ auth:
   password: ""
   erlangCookie: ""
 
-  existingPasswordSecret: rabbitmq-credentials
-  existingErlangSecret: rabbitmq-credentials
+  existingPasswordSecret: rabbitmq-credentials-messaging
+  existingErlangSecret: rabbitmq-credentials-messaging
   existingSecretPasswordKey: password
   existingSecretErlangCookieKey: erlang-cookie
 
