@@ -17,3 +17,22 @@ service:
   enabled: false
   type: ClusterIP
   port: 8080
+
+initContainers:
+- name: wait-for-rabbitmq
+  image: busybox:1.36
+  command:
+    - /bin/sh
+    - -c
+    - |
+      echo "Waiting for RabbitMQ at ${RABBITMQ_HOST}:${RABBITMQ_PORT}..."
+      while ! nc -z "${RABBITMQ_HOST}" "${RABBITMQ_PORT}"; do
+        echo "RabbitMQ not ready yet, sleeping..."
+        sleep 3
+      done
+      echo "RabbitMQ is up, starting payment-service."
+  envFrom:
+    - configMapRef:
+        name: rabbitmq-config-apps
+    - secretRef:
+        name: rabbitmq-credentials-apps

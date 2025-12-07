@@ -6,4 +6,4 @@ metadata:
 data:
   RABBITMQ_HOST: "rabbitmq.messaging.svc.cluster.local"
   RABBITMQ_PORT: "5672"
-  RABBITMQ_VHOST: "/order"
+  RABBITMQ_VHOST: "/"
