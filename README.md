@@ -23,7 +23,6 @@ This project demonstrates a basic ordering and payment flow using asynchronous m
 ---
 
 ## Architecture
-<<<<<<< HEAD
 
 User → order-api (HTTP)
 ↓
@@ -73,7 +72,6 @@ Copy code
    - simulates a payment attempt
    - inserts a record into `payments` with `SUCCEEDED` or `FAILED`
    - publishes `payment.succeeded` or `payment.failed` back to `events.topic`
->>>>>>> d6f13248e34dd0cd7bb2de1cf656568c153dd462
 
 ### Project structure
 ```bash
