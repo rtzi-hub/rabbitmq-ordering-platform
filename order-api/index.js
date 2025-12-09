@@ -17,9 +17,6 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", service: SERVICE_NAME });
 });
 
-/**
- * Modern Dev Dashboard (HTML)
- */
 app.get("/", async (req, res) => {
   try {
     const showsResult = await query(
@@ -67,20 +64,21 @@ app.get("/", async (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
-      color-scheme: dark;
-      --bg: #020617;
-      --bg-soft: #020617;
-      --surface: #020617;
-      --surface-soft: #020617;
-      --border-subtle: #1f2937;
-      --accent: #38bdf8;
-      --accent-soft: rgba(56,189,248,0.12);
-      --accent-strong: rgba(56,189,248,0.22);
-      --text-main: #e5e7eb;
-      --text-muted: #9ca3af;
-      --danger: #f97373;
-      --success: #4ade80;
-      --warning: #eab308;
+      color-scheme: light;
+      --bg: #f1f5f9;
+      --bg-soft: #e5edf7;
+      --surface: #ffffff;
+      --surface-soft: #f9fafb;
+      --border-subtle: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.08);
+      --accent-strong: rgba(37, 99, 235, 0.18);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --warning: #ea580c;
     }
     * {
       box-sizing: border-box;
@@ -90,9 +88,9 @@ app.get("/", async (req, res) => {
       min-height: 100vh;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(56,189,248,0.14), transparent 55%),
-        radial-gradient(circle at top right, rgba(147,51,234,0.18), transparent 55%),
-        #020617;
+        radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 60%),
+        radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.06), transparent 65%),
+        var(--bg);
       color: var(--text-main);
       padding: 24px;
       display: flex;
@@ -103,7 +101,9 @@ app.get("/", async (req, res) => {
       max-width: 1120px;
       margin: 0 auto;
     }
-    header {
+
+    /* Header */
+    .page-header {
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -111,131 +111,80 @@ app.get("/", async (req, res) => {
     }
     .title-row {
       display: flex;
-      align-items: baseline;
+      align-items: flex-start;
       justify-content: space-between;
-      gap: 12px;
+      gap: 16px;
       flex-wrap: wrap;
     }
     h1 {
       margin: 0;
-      font-size: 26px;
-      letter-spacing: 0.03em;
-      background: linear-gradient(to right, #38bdf8, #a855f7);
-      -webkit-background-clip: text;
-      color: transparent;
-    }
-    .badge {
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.4);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--text-muted);
-      background: rgba(15,23,42,0.8);
-      backdrop-filter: blur(14px);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .badge-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: #22c55e;
-      box-shadow: 0 0 8px rgba(34,197,94,0.9);
+      font-size: 28px;
+      letter-spacing: 0.02em;
+      color: #0f172a;
     }
     .subtitle {
       margin: 0;
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 640px;
+      line-height: 1.5;
+    }
+    .subtitle.small {
       font-size: 13px;
-      color: var(--text-muted);
     }
-    .subtitle code {
-      background: rgba(15,23,42,0.8);
-      border-radius: 4px;
-      padding: 1px 6px;
-      font-size: 12px;
-      border: 1px solid rgba(31,41,55,0.9);
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.45fr);
-      gap: 20px;
-      margin-top: 18px;
-    }
-    .card {
-      background: radial-gradient(circle at top, rgba(15,23,42,0.9), #020617);
-      border-radius: 14px;
-      padding: 14px 14px 10px;
-      border: 1px solid rgba(31,41,55,0.9);
-      box-shadow:
-        0 16px 40px rgba(0,0,0,0.55),
-        0 0 0 1px rgba(15,23,42,0.9) inset;
-      position: relative;
-      overflow: hidden;
-    }
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(circle at top right, rgba(56,189,248,0.15), transparent 55%);
-      opacity: 0.75;
-      pointer-events: none;
-    }
-    .card > * {
-      position: relative;
-      z-index: 1;
-    }
-    .card-header {
+    .badge {
       display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-    .card-title {
-      margin: 0;
-      font-size: 15px;
-      letter-spacing: 0.03em;
-    }
-    .card-subtitle {
-      margin: 0;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-    .card-subtitle code {
-      background: rgba(15,23,42,0.9);
-      padding: 1px 5px;
-      border-radius: 4px;
-      border: 1px solid rgba(31,41,55,0.8);
-      font-size: 11px;
-    }
-    .pill {
-      font-size: 11px;
-      color: var(--text-muted);
-      background: rgba(15,23,42,0.9);
-      padding: 3px 8px;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
       border-radius: 999px;
-      border: 1px solid rgba(31,41,55,0.9);
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
+      font-size: 12px;
+      white-space: nowrap;
     }
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+    }
+    .badge-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.2;
+    }
+    .badge-label {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .badge-text strong {
+      font-weight: 600;
+    }
+
+    /* Stats row */
     .stats-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
+      gap: 12px;
+      margin-top: 14px;
     }
     .stat-chip {
-      flex: 0 0 auto;
-      min-width: 120px;
-      background: linear-gradient(to right, rgba(15,23,42,0.95), rgba(15,23,42,0.9));
+      flex: 1 1 160px;
+      background: var(--surface);
       border-radius: 999px;
-      border: 1px solid rgba(31,41,55,0.9);
-      padding: 6px 10px;
+      border: 1px solid var(--border-subtle);
+      padding: 8px 12px;
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
-      font-size: 12px;
+      align-items: center;
+      font-size: 13px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03);
     }
     .stat-label {
       color: var(--text-muted);
@@ -252,122 +201,213 @@ app.get("/", async (req, res) => {
     .stat-value.warning {
       color: var(--warning);
     }
+
+    /* Layout grid */
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.45fr);
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    /* Cards */
+    .card {
+      background: linear-gradient(to bottom, var(--surface-soft), var(--surface));
+      border-radius: 16px;
+      padding: 16px 16px 12px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to right,
+        rgba(37, 99, 235, 0.04),
+        transparent 55%
+      );
+      pointer-events: none;
+    }
+    .card > * {
+      position: relative;
+      z-index: 1;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .card-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #0f172a;
+    }
+    .card-subtitle {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .card-subtitle code {
+      font-size: 12px;
+    }
+    .pill {
+      font-size: 11px;
+      color: #1d4ed8;
+      background: var(--accent-soft);
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--accent-strong);
+      white-space: nowrap;
+    }
+
+    /* Tables */
     .table-wrap {
       margin-top: 10px;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid rgba(31,41,55,0.95);
-      background: rgba(15,23,42,0.98);
+      border-radius: 12px;
+      overflow: auto;
+      border: 1px solid var(--border-subtle);
+      background: var(--surface-soft);
     }
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
+      min-width: 100%;
     }
     th, td {
-      padding: 7px 8px;
-      border-bottom: 1px solid rgba(31,41,55,0.9);
+      padding: 8px 10px;
+      border-bottom: 1px solid #e5e7eb;
       vertical-align: middle;
     }
     th {
       text-align: left;
-      background: radial-gradient(circle at top, #020617, #020617);
+      background: #f9fafb;
       font-size: 11px;
       color: var(--text-muted);
+      white-space: nowrap;
     }
-    tr:nth-child(even) td {
-      background: rgba(15,23,42,0.96);
+    tbody tr:nth-child(even) td {
+      background: #f9fafb;
     }
-    tr:nth-child(odd) td {
-      background: rgba(15,23,42,0.98);
+    tbody tr:nth-child(odd) td {
+      background: #ffffff;
     }
+
     .muted {
       color: var(--text-muted);
-      font-size: 11px;
+      font-size: 12px;
     }
+
+    /* Status tags */
     .tag {
       display: inline-flex;
       align-items: center;
-      padding: 2px 7px;
+      padding: 2px 8px;
       border-radius: 999px;
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
+      border: 1px solid transparent;
     }
     .tag-ok {
-      background: rgba(34,197,94,0.12);
-      color: #bbf7d0;
-      border: 1px solid rgba(34,197,94,0.55);
+      background: rgba(22, 163, 74, 0.06);
+      color: #166534;
+      border-color: rgba(22, 163, 74, 0.35);
     }
     .tag-failed {
-      background: rgba(248,113,113,0.14);
-      color: #fecaca;
-      border: 1px solid rgba(248,113,113,0.6);
+      background: rgba(220, 38, 38, 0.06);
+      color: #b91c1c;
+      border-color: rgba(220, 38, 38, 0.35);
     }
     .tag-pending {
-      background: rgba(147,51,234,0.18);
-      color: #e9d5ff;
-      border: 1px solid rgba(147,51,234,0.7);
+      background: rgba(234, 179, 8, 0.06);
+      color: #92400e;
+      border-color: rgba(234, 179, 8, 0.35);
     }
+
+    /* Code + API hint */
     code {
-      background: rgba(15,23,42,0.9);
-      padding: 1px 4px;
+      background: #eff6ff;
+      padding: 1px 5px;
       border-radius: 4px;
-      border: 1px solid rgba(31,41,55,0.9);
-      font-size: 11px;
+      border: 1px solid #dbeafe;
+      font-size: 12px;
+      color: #1e40af;
     }
     .api-hint {
-      margin-top: 10px;
-      font-size: 11px;
+      margin-top: 12px;
+      font-size: 12px;
       color: var(--text-muted);
+      line-height: 1.5;
     }
     .api-hint code {
-      font-size: 11px;
+      font-size: 12px;
     }
-    @media (max-width: 840px) {
+
+    @media (max-width: 880px) {
       body {
         padding: 16px;
       }
       .grid {
         grid-template-columns: minmax(0, 1fr);
       }
+      .badge {
+        align-self: flex-start;
+      }
     }
   </style>
 </head>
 <body>
   <div class="shell">
-    <header>
+    <header class="page-header">
       <div class="title-row">
-        <h1>RabbitMQ Ordering Platform</h1>
+        <div>
+          <h1>RabbitMQ Ordering Platform</h1>
+          <p class="subtitle">
+            Clear, real-time overview of your event-driven ticket ordering demo:
+            database rows, RabbitMQ events, and payment outcomes in one place.
+          </p>
+        </div>
         <div class="badge">
           <span class="badge-dot"></span>
-          <span>Dev dashboard · ${SERVICE_NAME}</span>
+          <div class="badge-text">
+            <span class="badge-label">Service</span>
+            <strong>${SERVICE_NAME}</strong>
+          </div>
         </div>
       </div>
-      <p class="subtitle">
-        Event-driven ticket ordering demo.
-        <code>POST /orders</code> writes to <code>orders</code> and publishes <code>order.created</code> to RabbitMQ.
+      <p class="subtitle small">
+        <code>POST /orders</code> creates an order, reserves capacity, and publishes
+        <code>order.created</code> to RabbitMQ.
       </p>
     </header>
 
-    <div class="stats-row">
+    <section class="stats-row">
       <div class="stat-chip">
         <span class="stat-label">Total orders</span>
         <span class="stat-value">${totalOrders}</span>
       </div>
       <div class="stat-chip">
-        <span class="stat-label">Succeeded</span>
+        <span class="stat-label">Succeeded payments</span>
         <span class="stat-value success">${succeededPayments}</span>
       </div>
       <div class="stat-chip">
-        <span class="stat-label">Failed</span>
+        <span class="stat-label">Failed payments</span>
         <span class="stat-value danger">${failedPayments}</span>
       </div>
       <div class="stat-chip">
         <span class="stat-label">No payment row</span>
         <span class="stat-value warning">${pendingPayments}</span>
       </div>
-    </div>
+    </section>
 
     <div class="grid">
       <!-- Shows -->
@@ -376,7 +416,8 @@ app.get("/", async (req, res) => {
           <div>
             <h2 class="card-title">Shows (seed data)</h2>
             <p class="card-subtitle">
-              Backed by <code>shows</code> · IDs used as <code>showId</code> in <code>POST /orders</code>.
+              Backed by <code>shows</code>. Use the IDs as <code>showId</code> in
+              <code>POST /orders</code>.
             </p>
           </div>
           <span class="pill">${shows.length} show${shows.length === 1 ? "" : "s"}</span>
@@ -420,10 +461,10 @@ app.get("/", async (req, res) => {
       <section class="card">
         <div class="card-header">
           <div>
-            <h2 class="card-title">Orders & Payments</h2>
+            <h2 class="card-title">Orders &amp; payments</h2>
             <p class="card-subtitle">
-              <code>orders</code> LEFT JOIN <code>payments</code>.
-              New rows appear after calling <code>POST /orders</code>.
+              <code>orders</code> LEFT JOIN <code>payments</code>. New rows appear after
+              calling <code>POST /orders</code>.
             </p>
           </div>
           <span class="pill">Latest ${Math.min(50, totalOrders)} orders</span>
@@ -436,7 +477,7 @@ app.get("/", async (req, res) => {
                 <th>Order</th>
                 <th>User / Show</th>
                 <th>Qty</th>
-                <th>Order Status</th>
+                <th>Order status</th>
                 <th>Payment</th>
               </tr>
             </thead>
@@ -484,9 +525,8 @@ app.get("/", async (req, res) => {
         </div>
 
         <div class="api-hint">
-          JSON endpoints for automation:&nbsp;
-          <code>GET /orders</code>,
-          <code>GET /payments</code>.
+          For automation, use the JSON endpoints:&nbsp;
+          <code>GET /orders</code> and <code>GET /payments</code>.
         </div>
       </section>
     </div>
@@ -501,9 +541,6 @@ app.get("/", async (req, res) => {
   }
 });
 
-/**
- * JSON: list orders + payment info
- */
 app.get("/orders", async (req, res) => {
   try {
     const result = await query(
