@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "payment-service-chart.fullname" . }}-svc
+  name: {{ include "payment-service-chart.fullname" . }}
   labels:
     {{- include "payment-service-chart.labels" . | nindent 4 }}
 spec:

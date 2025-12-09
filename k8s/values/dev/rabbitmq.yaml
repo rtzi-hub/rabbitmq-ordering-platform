@@ -23,8 +23,7 @@ replicaCount: 1
 
 persistence:
   enabled: false
-  # storageClass: "local-path"
-  # size: 4Gi
+
 
 resources:
   requests:

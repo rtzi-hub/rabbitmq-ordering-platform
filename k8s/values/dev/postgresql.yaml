@@ -2,21 +2,17 @@
 auth:
   enablePostgresUser: true
 
-  # אפליקציה:
-  username: "postgresdb"     # המשתמש שהאפליקציות שלך משתמשות בו
-  database: "postgresdb"     # הדאטהבייס הראשי של האפליקציה
 
-  # סיסמאות יגיעו מ-Secret קיים:
-  #   Secret: postgresql-credentials-database (namespace: database)
-  #   keys:
-  #     postgres-password  -> סיסמת superuser postgres
-  #     password           -> סיסמת המשתמש postgresdb
+  username: "postgresdb"
+  database: "postgresdb"
+
+
   postgresPassword: ""
   password: ""
   existingSecret: "postgresql-credentials-database"
 
 primary:
-  # DEV בלבד – בלי PVC, הכל in-memory
+
   persistence:
     enabled: false
 
@@ -28,7 +24,7 @@ primary:
       cpu: 200m
       memory: 512Mi
 
-  # schema + seed שרצים באיניט של הדאטהבייס
+
   initdb:
     scripts:
       01_ordering_schema.sql: |-
