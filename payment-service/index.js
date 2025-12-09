@@ -36,7 +36,7 @@ async function withTx(fn) {
 /**
  * RabbitMQ consumer:
  *  - listens to `order.created`
- *  - creates PENDING payments
+ *  - creates PENDING payments (idempotent by message_id)
  */
 async function startConsumer() {
   const channel = await getChannel();
@@ -65,7 +65,15 @@ async function startConsumer() {
       const content = JSON.parse(msg.content.toString());
       console.log(`[${SERVICE_NAME}] order.created`, content);
 
-      const { messageId, orderId, userId, showId, quantity } = content;
+      const { messageId, orderId, userId, quantity } = content;
+
+      if (!messageId || !orderId || !userId || !quantity) {
+        console.warn(
+          `[${SERVICE_NAME}] invalid order.created payload, nack without requeue`
+        );
+        channel.nack(msg, false, false);
+        return;
+      }
 
       // Idempotency: skip if message_id already exists
       const existing = await query(
@@ -75,20 +83,19 @@ async function startConsumer() {
 
       if (existing.rowCount > 0) {
         console.log(
-          `[${SERVICE_NAME}] message ${messageId} already processed`
+          `[${SERVICE_NAME}] message ${messageId} already processed, ack`
         );
         channel.ack(msg);
         return;
       }
 
-      // Create PENDING payment row
+      // Create PENDING payment row (amount = quantity * 100, e.g. cents)
       await query(
         `INSERT INTO payments (order_id, user_id, amount, status, message_id)
          VALUES ($1, $2, $3, $4, $5)`,
         [orderId, userId, quantity * 100, "PENDING", messageId]
       );
 
-      // Optionally you could also create an “authorization” event here.
       console.log(
         `[${SERVICE_NAME}] Created PENDING payment for order ${orderId}`
       );
@@ -96,6 +103,7 @@ async function startConsumer() {
       channel.ack(msg);
     } catch (err) {
       console.error(`[${SERVICE_NAME}] error in consumer`, err);
+      // nack without requeue → will go to DLX
       channel.nack(msg, false, false);
     }
   });
@@ -135,9 +143,15 @@ app.get("/payments", async (req, res) => {
  */
 app.post("/payments/:orderId/approve", async (req, res) => {
   const orderId = parseInt(req.params.orderId, 10);
+  if (Number.isNaN(orderId)) {
+    return res.status(400).json({ error: "invalid_order_id" });
+  }
 
   try {
+    let orderForEvent = null;
+
     await withTx(async (client) => {
+      // Lock payment row for this order
       const pmt = await client.query(
         `SELECT * FROM payments WHERE order_id = $1 FOR UPDATE`,
         [orderId]
@@ -157,39 +171,51 @@ app.post("/payments/:orderId/approve", async (req, res) => {
         throw err;
       }
 
-      // Update payment + order + reservation
+      // 1) payment -> SUCCEEDED
       await client.query(
-        `UPDATE payments SET status = 'SUCCEEDED' WHERE order_id = $1`,
-        [orderId]
-      );
-
-      const orderResult = await client.query(
-        `UPDATE orders
-           SET status = 'CONFIRMED'
-         WHERE id = $1
-         RETURNING user_id, show_id, quantity`,
-        [orderId]
-      );
-
-      await client.query(
-        `UPDATE inventory_reservations
-           SET status = 'COMMITTED'
+        `UPDATE payments
+           SET status = 'SUCCEEDED'
          WHERE order_id = $1`,
         [orderId]
       );
 
-      const order = orderResult.rows[0];
+      // 2) order -> CONFIRMED
+      const orderResult = await client.query(
+        `UPDATE orders
+           SET status = 'CONFIRMED'
+         WHERE id = $1
+         RETURNING id, user_id, show_id, quantity`,
+        [orderId]
+      );
 
-      // After DB commit: publish event
-      // (we don't await inside the tx)
+      if (orderResult.rowCount === 0) {
+        const err = new Error("order_not_found");
+        err.statusCode = 404;
+        throw err;
+      }
+
+      orderForEvent = orderResult.rows[0];
+
+      // 3) reservation -> COMMITTED
+      await client.query(
+        `UPDATE inventory_reservations
+           SET status = 'COMMITTED'
+         WHERE order_id = $1
+           AND status = 'RESERVED'`,
+        [orderId]
+      );
+    });
+
+    // After DB commit: publish event (fire-and-forget)
+    if (orderForEvent) {
       setImmediate(async () => {
         try {
           await publishEvent("payment.succeeded", {
             type: "payment.succeeded",
-            orderId,
-            userId: order.user_id,
-            showId: order.show_id,
-            quantity: order.quantity,
+            orderId: orderForEvent.id,
+            userId: orderForEvent.user_id,
+            showId: orderForEvent.show_id,
+            quantity: orderForEvent.quantity,
           });
         } catch (e) {
           console.error(
@@ -198,7 +224,7 @@ app.post("/payments/:orderId/approve", async (req, res) => {
           );
         }
       });
-    });
+    }
 
     res.json({ status: "ok", orderId });
   } catch (err) {
@@ -218,9 +244,15 @@ app.post("/payments/:orderId/approve", async (req, res) => {
  */
 app.post("/payments/:orderId/reject", async (req, res) => {
   const orderId = parseInt(req.params.orderId, 10);
+  if (Number.isNaN(orderId)) {
+    return res.status(400).json({ error: "invalid_order_id" });
+  }
 
   try {
+    let orderForEvent = null;
+
     await withTx(async (client) => {
+      // Lock payment row for this order
       const pmt = await client.query(
         `SELECT * FROM payments WHERE order_id = $1 FOR UPDATE`,
         [orderId]
@@ -240,36 +272,51 @@ app.post("/payments/:orderId/reject", async (req, res) => {
         throw err;
       }
 
+      // 1) payment -> FAILED
       await client.query(
-        `UPDATE payments SET status = 'FAILED' WHERE order_id = $1`,
-        [orderId]
-      );
-
-      const orderResult = await client.query(
-        `UPDATE orders
-           SET status = 'CANCELLED'
-         WHERE id = $1
-         RETURNING user_id, show_id, quantity`,
-        [orderId]
-      );
-
-      await client.query(
-        `UPDATE inventory_reservations
-           SET status = 'EXPIRED'
+        `UPDATE payments
+           SET status = 'FAILED'
          WHERE order_id = $1`,
         [orderId]
       );
 
-      const order = orderResult.rows[0];
+      // 2) order -> CANCELLED
+      const orderResult = await client.query(
+        `UPDATE orders
+           SET status = 'CANCELLED'
+         WHERE id = $1
+         RETURNING id, user_id, show_id, quantity`,
+        [orderId]
+      );
 
+      if (orderResult.rowCount === 0) {
+        const err = new Error("order_not_found");
+        err.statusCode = 404;
+        throw err;
+      }
+
+      orderForEvent = orderResult.rows[0];
+
+      // 3) reservation -> EXPIRED (release seats)
+      await client.query(
+        `UPDATE inventory_reservations
+           SET status = 'EXPIRED'
+         WHERE order_id = $1
+           AND status = 'RESERVED'`,
+        [orderId]
+      );
+    });
+
+    // After DB commit: publish event (fire-and-forget)
+    if (orderForEvent) {
       setImmediate(async () => {
         try {
           await publishEvent("payment.failed", {
             type: "payment.failed",
-            orderId,
-            userId: order.user_id,
-            showId: order.show_id,
-            quantity: order.quantity,
+            orderId: orderForEvent.id,
+            userId: orderForEvent.user_id,
+            showId: orderForEvent.show_id,
+            quantity: orderForEvent.quantity,
             reason: "MANUAL_REJECTION",
           });
         } catch (e) {
@@ -279,7 +326,7 @@ app.post("/payments/:orderId/reject", async (req, res) => {
           );
         }
       });
-    });
+    }
 
     res.json({ status: "rejected", orderId });
   } catch (err) {

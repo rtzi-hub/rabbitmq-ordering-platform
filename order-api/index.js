@@ -17,31 +17,53 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", service: SERVICE_NAME });
 });
 
+/**
+ * Modern Dev Dashboard (HTML)
+ * Shows:
+ *  - live inventory (capacity + available)
+ *  - orders + payment status
+ */
 app.get("/", async (req, res) => {
   try {
-    const showsResult = await query(
-      `SELECT id, name, venue, starts_at, capacity, created_at
-       FROM shows
-       ORDER BY id ASC`
-    );
+    // 1) Shows + available inventory
+    const showsResult = await query(`
+      SELECT
+        s.id,
+        s.name,
+        s.venue,
+        s.starts_at,
+        s.capacity,
+        s.created_at,
+        s.capacity
+          - COALESCE(
+              SUM(ir.quantity) FILTER (WHERE ir.status IN ('RESERVED','COMMITTED')),
+              0
+            ) AS available
+      FROM shows s
+      LEFT JOIN inventory_reservations ir
+        ON ir.show_id = s.id
+      GROUP BY s.id, s.name, s.venue, s.starts_at, s.capacity, s.created_at
+      ORDER BY s.id ASC;
+    `);
 
-    const ordersResult = await query(
-      `SELECT
-         o.id,
-         o.user_id,
-         o.show_id,
-         o.quantity,
-         o.status        AS order_status,
-         o.created_at    AS order_created_at,
-         p.status        AS payment_status,
-         p.amount        AS payment_amount,
-         p.created_at    AS payment_created_at
-       FROM orders o
-       LEFT JOIN payments p
-         ON p.order_id = o.id
-       ORDER BY o.id DESC
-       LIMIT 50`
-    );
+    // 2) Orders + joined payment info
+    const ordersResult = await query(`
+      SELECT
+        o.id,
+        o.user_id,
+        o.show_id,
+        o.quantity,
+        o.status        AS order_status,
+        o.created_at    AS order_created_at,
+        p.status        AS payment_status,
+        p.amount        AS payment_amount,
+        p.created_at    AS payment_created_at
+      FROM orders o
+      LEFT JOIN payments p
+        ON p.order_id = o.id
+      ORDER BY o.id DESC
+      LIMIT 50;
+    `);
 
     const shows = showsResult.rows;
     const orders = ordersResult.rows;
@@ -431,12 +453,13 @@ app.get("/", async (req, res) => {
                 <th>Name / Venue</th>
                 <th>Starts</th>
                 <th>Capacity</th>
+                <th>Available</th>
               </tr>
             </thead>
             <tbody>
               ${
                 shows.length === 0
-                  ? `<tr><td colspan="4" class="muted">No shows found. Check DB init.</td></tr>`
+                  ? `<tr><td colspan="5" class="muted">No shows found. Check DB init.</td></tr>`
                   : shows
                       .map(
                         (s) => `
@@ -448,6 +471,7 @@ app.get("/", async (req, res) => {
                   </td>
                   <td class="muted">${s.starts_at}</td>
                   <td>${s.capacity}</td>
+                  <td>${s.available}</td>
                 </tr>`
                       )
                       .join("")
@@ -541,25 +565,28 @@ app.get("/", async (req, res) => {
   }
 });
 
+/**
+ * JSON: list orders + payment info
+ */
 app.get("/orders", async (req, res) => {
   try {
-    const result = await query(
-      `SELECT
-         o.id,
-         o.user_id,
-         o.show_id,
-         o.quantity,
-         o.status        AS order_status,
-         o.created_at    AS order_created_at,
-         p.status        AS payment_status,
-         p.amount        AS payment_amount,
-         p.created_at    AS payment_created_at
-       FROM orders o
-       LEFT JOIN payments p
-         ON p.order_id = o.id
-       ORDER BY o.id DESC
-       LIMIT 50`
-    );
+    const result = await query(`
+      SELECT
+        o.id,
+        o.user_id,
+        o.show_id,
+        o.quantity,
+        o.status        AS order_status,
+        o.created_at    AS order_created_at,
+        p.status        AS payment_status,
+        p.amount        AS payment_amount,
+        p.created_at    AS payment_created_at
+      FROM orders o
+      LEFT JOIN payments p
+        ON p.order_id = o.id
+      ORDER BY o.id DESC
+      LIMIT 50;
+    `);
     res.json(result.rows);
   } catch (err) {
     console.error("[order-api] Error in GET /orders", err);
@@ -572,12 +599,12 @@ app.get("/orders", async (req, res) => {
  */
 app.get("/payments", async (req, res) => {
   try {
-    const result = await query(
-      `SELECT id, order_id, user_id, amount, status, message_id, created_at
-       FROM payments
-       ORDER BY id DESC
-       LIMIT 50`
-    );
+    const result = await query(`
+      SELECT id, order_id, user_id, amount, status, message_id, created_at
+      FROM payments
+      ORDER BY id DESC
+      LIMIT 50;
+    `);
     res.json(result.rows);
   } catch (err) {
     console.error("[order-api] Error in GET /payments", err);
