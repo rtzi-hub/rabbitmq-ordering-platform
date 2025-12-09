@@ -9,6 +9,6 @@ NOTICE*
 rabbitmq-credentials-*.yaml
 # local env files
 .env
-postgresql-*.yaml
+postgresql-credentials-*.yaml
 DEPLOYMENT_ORDER_VERIFICATION.md
 rabbitmq.md
