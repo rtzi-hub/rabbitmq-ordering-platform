@@ -235,12 +235,10 @@ Approve or reject payments → Observe status changes
 
 View logs for debugging:
 
-<<<<<<< HEAD
 ```bash
 # order-api
 kubectl -n apps logs deploy/order-api-order-api-chart --tail=50
 # payment-service
 kubectl -n apps logs deploy/payment-service-payment-service-chart --tail=50
 ```
-=======
->>>>>>> d6f13248e34dd0cd7bb2de1cf656568c153dd462
+
