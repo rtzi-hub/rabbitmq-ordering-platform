@@ -1,6 +1,9 @@
 image:
   repository: rontz/order-api
-  tag: "v1"
+  tag: "v3"
+  pullPolicy: Always
+
+fullnameOverride: order-api
 
 replicaCount: 1
 
@@ -13,6 +16,6 @@ resources:
     memory: 256Mi
 
 service:
-  enabled: false
+  enabled: true
   type: ClusterIP
   port: 8080

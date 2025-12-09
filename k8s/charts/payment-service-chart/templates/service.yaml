@@ -8,10 +8,10 @@ metadata:
 spec:
   type: {{ .Values.service.type | default "ClusterIP" }}
   ports:
-    - port: {{ .Values.service.port | default 8080 }}
+    - port: {{ .Values.service.port }}
       targetPort: http
-      protocol: TCP
       name: http
+
   selector:
     {{- include "payment-service-chart.selectorLabels" . | nindent 4 }}
 {{- end }}

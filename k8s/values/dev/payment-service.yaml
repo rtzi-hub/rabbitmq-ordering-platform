@@ -1,6 +1,9 @@
 image:
   repository: rontz/payment-service
-  tag: "v1"
+  tag: "v4"
+  pullPolicy: Always
+
+fullnameOverride: payment-service
 
 replicaCount: 1
 
@@ -14,9 +17,9 @@ resources:
 
 
 service:
-  enabled: false
+  enabled: true
   type: ClusterIP
-  port: 8080
+  port: 8081
 
 initContainers:
 - name: wait-for-rabbitmq

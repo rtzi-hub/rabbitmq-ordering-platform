@@ -1,4 +1,3 @@
-// order-api/lib/rabbit.js
 const amqp = require("amqplib");
 
 let connection;

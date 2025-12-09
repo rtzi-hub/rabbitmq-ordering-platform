@@ -5,5 +5,6 @@ metadata:
   namespace: apps
 data:
   DB_HOST: "postgresql.database.svc.cluster.local"
-  DB_PORT: "5432"
   DB_NAME: "postgresdb"
+  DB_PORT: "5432"
+

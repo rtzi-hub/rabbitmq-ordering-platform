@@ -2,10 +2,11 @@ replicaCount: 1
 
 image:
   repository: rontz/order-api
-  tag: "v1"
-  pullPolicy: IfNotPresent
+  tag: "v2"
+  pullPolicy: Always
 
 service:
+  enabled: true
   type: ClusterIP
   port: 8080
 
