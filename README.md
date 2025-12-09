@@ -130,6 +130,9 @@ Install RabbitMQ (Bitnami Helm)
 Install PostgreSQL (Bitnami Helm) with schema and seed data
 Deploy order-api and payment-service
 
+Pods list of the lab results:
+<img width="726" height="266" alt="image" src="https://github.com/user-attachments/assets/94e4d83b-f4f6-4f3b-9c0e-d954979e0091" />
+
 1. Access the Dashboard
 ```bash
 kubectl -n apps port-forward deploy/order-api-order-api-chart 8080:8080
@@ -192,6 +195,9 @@ orders.status → CANCELLED
 inventory_reservations.status → EXPIRED
 
 Then refresh http://localhost:8080/ to verify updated states.
+
+Landing page example for the result of the rejected payment + the approved payment (PAY ATTENTION That the Quantity is changing according to the approval):
+<img width="1182" height="593" alt="image" src="https://github.com/user-attachments/assets/ea2df57a-95b3-4b4e-a1be-cf1c0718ccc4" />
 
 Features
 Event-driven architecture using RabbitMQ
