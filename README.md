@@ -90,23 +90,6 @@ rabbitmq-ordering-platform/
 ```
 
 ---
-
-## Project Structure
-```bash
-rabbitmq-ordering-platform/
-├── order-api/ # Order HTTP API and Dashboard (port 8080)
-├── payment-service/ # Payment consumer and HTTP API (port 8081)
-└── k8s/
-├── charts/ # Helm charts for services
-├── configmaps/ # Shared non-secret config
-├── secrets/ # Kubernetes secrets (gitignored)
-├── values/
-│ └── dev/ # Dev values for Helm charts
-└── scripts/
-├── run-dev.sh # Launch development stack
-└── cleanup-dev.sh # Tear down development stack
-```
----
 ## Installation
 
 ### Prerequisites
