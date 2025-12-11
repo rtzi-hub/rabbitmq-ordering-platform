@@ -48,3 +48,8 @@ helm upgrade --install kube-prometheus-stack \
   -f "${ROOT_DIR}/values/dev/kube-prom-stack.yaml" \
   prometheus-community/kube-prometheus-stack
 
+
+helm upgrade --install postgres-exporter \
+  prometheus-community/prometheus-postgres-exporter \
+  -n database \
+  -f k8s/monitoring/prom-exporters/postgresql-exporter.yaml

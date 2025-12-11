@@ -1,0 +1,58 @@
+# --- Postgres connection ---
+config:
+  datasource:
+    # Bitnami PostgreSQL service
+    host: "postgresql.database.svc.cluster.local"
+    port: "5432"
+    database: "postgresdb"
+    user: "postgresdb"
+
+    # Use existing secret (defined in a separate manifest below)
+    passwordSecret:
+      name: "postgresql-credentials-database"   # NOTE: spelled correctly
+      key: "password"
+
+    sslmode: "disable"
+
+  exporter:
+    # keep default metrics enabled
+    disableDefaultMetrics: false
+    autoDiscoverDatabases: false
+
+# --- Service to expose /metrics ---
+service:
+  port: 9187
+  targetPort: 9187
+  type: ClusterIP
+
+# --- ServiceMonitor so kube-prometheus-stack can scrape it ---
+serviceMonitor:
+  enabled: true
+
+  # ServiceMonitor object will live in monitoring namespace
+  namespace: "monitoring"
+
+  interval: 30s
+  scrapeTimeout: 10s
+
+  # IMPORTANT: label must match Prometheus selector (kube-prometheus-stack release)
+  labels:
+    release: kube-prometheus-stack
+
+  # Tell Prometheus to scrape a Service living in the "database" namespace
+  namespaceSelector:
+    matchNames:
+      - database
+
+# --- Resources for exporter pod ---
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# --- (Optional) alert rules – DISABLED for now to avoid Helm tpl errors ---
+prometheusRule:
+  enabled: false
