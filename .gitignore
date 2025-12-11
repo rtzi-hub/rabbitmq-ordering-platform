@@ -6,9 +6,10 @@ Validating
 Welcome
 NOTICE*
 *.log
-rabbitmq-credentials-*.yaml
+#rabbitmq-credentials-*.yaml
 # local env files
 .env
-postgresql-credentials-*.yaml
+#postgresql-credentials-*.yaml
 DEPLOYMENT_ORDER_VERIFICATION.md
 rabbitmq.md
+example*
