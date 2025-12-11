@@ -2,10 +2,12 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+MONITOR_NS="monitoring"
 
 kubectl create namespace messaging >/dev/null 2>&1 || true
 kubectl create namespace database  >/dev/null 2>&1 || true
 kubectl create namespace apps      >/dev/null 2>&1 || true
+kubectl create namespace monitoring      >/dev/null 2>&1 || true
 
 helm repo add bitnami https://charts.bitnami.com/bitnami >/dev/null 2>&1 || true
 helm repo update >/dev/null 2>&1 || true
@@ -17,6 +19,7 @@ kubectl apply -f "${ROOT_DIR}/secrets/rabbitmq-credentials-apps.yaml"
 kubectl apply -f "${ROOT_DIR}/secrets/rabbitmq-credentials-messaging.yaml"
 kubectl apply -f "${ROOT_DIR}/secrets/postgresql-credentials-apps.yaml"
 kubectl apply -f "${ROOT_DIR}/secrets/postgresql-credentials-database.yaml"
+kubectl apply -f "${ROOT_DIR}/secrets/grafana-credentials.yaml"
 
 helm upgrade --install rabbitmq bitnami/rabbitmq \
   -f "${ROOT_DIR}/values/dev/rabbitmq.yaml" \
@@ -35,3 +38,13 @@ helm upgrade --install payment-service \
   "${ROOT_DIR}/charts/payment-service-chart" \
   -f "${ROOT_DIR}/values/dev/payment-service.yaml" \
   -n apps
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+helm upgrade --install kube-prometheus-stack \
+  --create-namespace \
+  --namespace "${MONITOR_NS}" \
+  -f "${ROOT_DIR}/values/dev/kube-prom-stack.yaml" \
+  prometheus-community/kube-prometheus-stack
+

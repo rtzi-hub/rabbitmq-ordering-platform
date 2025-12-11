@@ -1,0 +1,94 @@
+# ----- Prometheus core config -----
+prometheus:
+  enabled: true
+  prometheusSpec:
+    # How often to scrape + evaluate rules
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+
+    # How long to keep metrics
+    retention: 7d
+
+    # Resources (single-node dev cluster)
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+
+    # Persist Prometheus data (local-path storage)
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 3Gi
+
+# Alertmanager
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+# Grafana config
+grafana:
+  enabled: true
+  adminUser: ""
+  adminPassword: ""
+
+  admin:
+    existingSecret: grafana-credentials
+    userKey: admin-user
+    passwordKey: admin-password
+
+  persistence:
+    enabled: true
+    type: pvc
+    size: 2Gi
+    storageClassName: local-path
+
+  service:
+    type: ClusterIP
+
+
+
+  # Sidecar for Dashboard import for configmap
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1" #specific the dashboard
+      searchNamespace: "monitoring"
+    datasources:
+      enabled: true
+
+# Node exporter / kube-state-metrics resources
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 30m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+
