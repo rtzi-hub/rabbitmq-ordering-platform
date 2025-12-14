@@ -45,11 +45,43 @@ grafana:
   enabled: true
   adminUser: ""
   adminPassword: ""
+  initChownData:
+    enabled: false
 
   admin:
     existingSecret: grafana-credentials
     userKey: admin-user
     passwordKey: admin-password
+
+
+
+  podSecurityContext:
+    fsGroup: 472
+    fsGroupChangePolicy: "OnRootMismatch"
+
+  securityContext:
+    runAsUser: 472
+    runAsGroup: 472
+    runAsNonRoot: true
+
+  readinessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 12
+
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 10
+
 
   persistence:
     enabled: true
