@@ -212,7 +212,7 @@ Open:
 http://localhost:3000
 ```
 Example of the monitoring dashboard - Configmap import:
-<img width="1024" height="668" alt="image" src="https://github.com/user-attachments/assets/07bbc223-269e-4301-b0b0-b6a7913af756" />
+<img width="1024" height="668" alt="image" src="https://github.com/user-attachments/assets/b8ed0477-63ac-4fe4-8c67-46bf3f7f8de2" />
 
 Features
 Event-driven architecture using RabbitMQ
@@ -253,9 +253,6 @@ Examples
 Create an order → View in dashboard
 
 Approve or reject payments → Observe status changes
-
-
-<img width="1024" height="668" alt="image" src="https://github.com/user-attachments/assets/b8ed0477-63ac-4fe4-8c67-46bf3f7f8de2" />
 
 View logs for debugging:
 
