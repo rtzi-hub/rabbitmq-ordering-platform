@@ -39,12 +39,27 @@ service:
 #volumePermissions:
  # enabled: true
 
+metrics:
+  enabled: true
+  serviceMonitor:
+    labels:
+      release: kube-prometheus-stack
+
+    default:
+      enabled: false
+    detailed:
+      enabled: true
+    perObject:
+      enabled: false
+
+
+
 tolerations:
   - key: "node-role.kubernetes.io/control-plane"
     operator: "Exists"
     effect: "NoSchedule"
 
   # IMPORTANT!! - Prod (multi-node):
-  #   - REMOVE this toleration so RabbitMQ runs ONLY on worker nodes.
+  #   - REMOVE this toleration so RabbitMQ runs ONLY on worker nodes. - current working on the control plane!
   #   - Optionally add tolerations/affinity to schedule on dedicated
   #     "stateful" or "message-broker" node pools with proper taints/labels.

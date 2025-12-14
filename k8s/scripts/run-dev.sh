@@ -55,7 +55,7 @@ helm upgrade --install postgres-exporter \
   -f k8s/monitoring/prom-exporters/postgresql-exporter.yaml
 
 
-helm upgrade --install rabbitmq-exporter \
-  prometheus-community/prometheus-rabbitmq-exporter \
-  -n database \
-  -f k8s/monitoring/prom-exporters/rabbitmq-exporter.yaml
+# helm upgrade --install rabbitmq-exporter \
+#   prometheus-community/prometheus-rabbitmq-exporter \
+#   -n database \
+#   -f k8s/monitoring/prom-exporters/rabbitmq-exporter.yaml
