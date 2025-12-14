@@ -182,6 +182,38 @@ Then refresh http://localhost:8080/ to verify updated states.
 Landing page example for the result of the rejected payment + the approved payment (PAY ATTENTION That the Quantity is changing according to the approval):
 <img width="1182" height="593" alt="image" src="https://github.com/user-attachments/assets/ea2df57a-95b3-4b4e-a1be-cf1c0718ccc4" />
 
+
+## Monitoring (Prometheus + Grafana)
+
+This repo can be observed with kube-prometheus-stack (Prometheus + Alertmanager + Grafana) plus:
+
+RabbitMQ metrics (queue depth, publish/ack rates, consumers)
+
+Postgres exporter (connections, TPS, cache hit ratio, locks, DB size)
+
+Recommended namespace: monitoring
+
+Install kube-prometheus-stack
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  -n monitoring --create-namespace \
+  -f k8s/values/dev/kube-prom-stack.yaml
+```
+Access Grafana
+```bash
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
+```
+
+Open:
+```text
+http://localhost:3000
+```
+Example of the monitoring dashboard - Configmap import:
+<img width="1024" height="668" alt="image" src="https://github.com/user-attachments/assets/07bbc223-269e-4301-b0b0-b6a7913af756" />
+
 Features
 Event-driven architecture using RabbitMQ
 Microservice separation between order and payment workflows
@@ -221,6 +253,9 @@ Examples
 Create an order → View in dashboard
 
 Approve or reject payments → Observe status changes
+
+
+<img width="1024" height="668" alt="image" src="https://github.com/user-attachments/assets/b8ed0477-63ac-4fe4-8c67-46bf3f7f8de2" />
 
 View logs for debugging:
 
