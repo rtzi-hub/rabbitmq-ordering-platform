@@ -50,7 +50,7 @@ metrics:
     detailed:
       enabled: true
     perObject:
-      enabled: false
+      enabled: true
 
 
 

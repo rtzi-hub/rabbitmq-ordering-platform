@@ -28,12 +28,11 @@ service:
 # --- ServiceMonitor so kube-prometheus-stack can scrape it ---
 serviceMonitor:
   enabled: true
-
   # ServiceMonitor object will live in monitoring namespace
   namespace: "monitoring"
 
-  interval: 30s
-  scrapeTimeout: 10s
+  interval: 10s
+  scrapeTimeout: 5s
 
   # IMPORTANT: label must match Prometheus selector (kube-prometheus-stack release)
   labels:
