@@ -227,7 +227,7 @@
         "gridPos": {
           "h": 2,
           "w": 4,
-          "x": 10,
+          "x": 8,
           "y": 1
         },
         "id": 38,
@@ -304,7 +304,7 @@
         "gridPos": {
           "h": 2,
           "w": 4,
-          "x": 15,
+          "x": 12,
           "y": 1
         },
         "id": 12,
@@ -343,6 +343,137 @@
         ],
         "title": "Current update data",
         "type": "stat"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "barWidthFactor": 0.6,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "showValues": false,
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "bytes"
+          },
+          "overrides": [
+            {
+              "__systemRef": "hideSeriesFrom",
+              "matcher": {
+                "id": "byNames",
+                "options": {
+                  "mode": "exclude",
+                  "names": [
+                    "template1"
+                  ],
+                  "prefix": "All except:",
+                  "readOnly": true
+                }
+              },
+              "properties": [
+                {
+                  "id": "custom.hideFrom",
+                  "value": {
+                    "legend": false,
+                    "tooltip": true,
+                    "viz": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 7,
+          "w": 8,
+          "x": 16,
+          "y": 1
+        },
+        "id": 8,
+        "options": {
+          "dataLinks": [],
+          "legend": {
+            "calcs": [
+              "mean",
+              "lastNotNull",
+              "sum"
+            ],
+            "displayMode": "table",
+            "placement": "right",
+            "showLegend": true
+          },
+          "tooltip": {
+            "hideZeros": false,
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "pluginVersion": "12.3.0",
+        "targets": [
+          {
+            "datasource": {
+              "uid": "${DS_DS_PROMETHEUS}"
+            },
+            "editorMode": "code",
+            "expr": "pg_stat_database_tup_updated != 0",
+            "format": "time_series",
+            "intervalFactor": 2,
+            "legendFormat": "{{datname}}",
+            "range": true,
+            "refId": "A",
+            "step": 2
+          }
+        ],
+        "title": "Update data",
+        "type": "timeseries"
       },
       {
         "datasource": {
@@ -813,83 +944,6 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "fieldConfig": {
-          "defaults": {
-            "mappings": [
-              {
-                "options": {
-                  "match": "null",
-                  "result": {
-                    "text": "N/A"
-                  }
-                },
-                "type": "special"
-              }
-            ],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            },
-            "unit": "bytes"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 3,
-          "w": 3,
-          "x": 18,
-          "y": 3
-        },
-        "id": 40,
-        "maxDataPoints": 100,
-        "options": {
-          "colorMode": "none",
-          "graphMode": "none",
-          "justifyMode": "auto",
-          "orientation": "horizontal",
-          "percentChangeColorMode": "standard",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showPercentChange": false,
-          "textMode": "auto",
-          "wideLayout": true
-        },
-        "pluginVersion": "12.3.0",
-        "targets": [
-          {
-            "datasource": {
-              "uid": "${DS_DS_PROMETHEUS}"
-            },
-            "editorMode": "code",
-            "expr": "pg_settings_shared_buffers_bytes",
-            "format": "time_series",
-            "intervalFactor": 1,
-            "range": true,
-            "refId": "A"
-          }
-        ],
-        "title": "Shared Buffers",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheus"
-        },
         "description": "Average user and system CPU time spent in seconds.",
         "fieldConfig": {
           "defaults": {
@@ -1150,6 +1204,7 @@
               }
             },
             "mappings": [],
+            "min": 0,
             "thresholds": {
               "mode": "absolute",
               "steps": [
@@ -1163,44 +1218,18 @@
                 }
               ]
             },
-            "unit": "bytes"
+            "unit": "short"
           },
-          "overrides": [
-            {
-              "__systemRef": "hideSeriesFrom",
-              "matcher": {
-                "id": "byNames",
-                "options": {
-                  "mode": "exclude",
-                  "names": [
-                    "template1"
-                  ],
-                  "prefix": "All except:",
-                  "readOnly": true
-                }
-              },
-              "properties": [
-                {
-                  "id": "custom.hideFrom",
-                  "value": {
-                    "legend": false,
-                    "tooltip": true,
-                    "viz": true
-                  }
-                }
-              ]
-            }
-          ]
+          "overrides": []
         },
         "gridPos": {
-          "h": 7,
+          "h": 5,
           "w": 8,
           "x": 16,
-          "y": 6
+          "y": 8
         },
-        "id": 8,
+        "id": 66,
         "options": {
-          "dataLinks": [],
           "legend": {
             "calcs": [
               "mean",
@@ -1224,16 +1253,25 @@
               "uid": "${DS_DS_PROMETHEUS}"
             },
             "editorMode": "code",
-            "expr": "pg_stat_database_tup_updated != 0",
+            "expr": "irate(pg_stat_database_conflicts[5m])",
             "format": "time_series",
-            "intervalFactor": 2,
-            "legendFormat": "{{datname}}",
+            "intervalFactor": 1,
+            "legendFormat": "{{datname}} conflicts",
             "range": true,
-            "refId": "A",
-            "step": 2
+            "refId": "B"
+          },
+          {
+            "datasource": {
+              "uid": "${DS_DS_PROMETHEUS}"
+            },
+            "expr": "irate(pg_stat_database_deadlocks{instance=\"$instance\", datname=~\"$datname\"}[5m])",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "{{datname}} deadlocks",
+            "refId": "A"
           }
         ],
-        "title": "Update data",
+        "title": "Conflicts/Deadlocks",
         "type": "timeseries"
       },
       {
@@ -1250,12 +1288,89 @@
         "type": "row"
       },
       {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "options": {
+                  "match": "null",
+                  "result": {
+                    "text": "N/A"
+                  }
+                },
+                "type": "special"
+              }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "bytes"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 3,
+          "w": 3,
+          "x": 0,
+          "y": 14
+        },
+        "id": 40,
+        "maxDataPoints": 100,
+        "options": {
+          "colorMode": "none",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "orientation": "horizontal",
+          "percentChangeColorMode": "standard",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "12.3.0",
+        "targets": [
+          {
+            "datasource": {
+              "uid": "${DS_DS_PROMETHEUS}"
+            },
+            "editorMode": "code",
+            "expr": "pg_settings_shared_buffers_bytes",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "range": true,
+            "refId": "A"
+          }
+        ],
+        "title": "Shared Buffers",
+        "type": "stat"
+      },
+      {
         "collapsed": false,
         "gridPos": {
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 14
+          "y": 17
         },
         "id": 30,
         "panels": [],
@@ -1329,7 +1444,7 @@
           "h": 7,
           "w": 8,
           "x": 0,
-          "y": 15
+          "y": 18
         },
         "id": 1,
         "options": {
@@ -1436,7 +1551,7 @@
           "h": 7,
           "w": 8,
           "x": 8,
-          "y": 15
+          "y": 18
         },
         "id": 60,
         "options": {
@@ -1551,7 +1666,7 @@
           "h": 7,
           "w": 8,
           "x": 16,
-          "y": 15
+          "y": 18
         },
         "id": 7,
         "options": {
@@ -1657,7 +1772,7 @@
           "h": 7,
           "w": 8,
           "x": 0,
-          "y": 22
+          "y": 25
         },
         "id": 5,
         "options": {
@@ -1763,7 +1878,7 @@
           "h": 7,
           "w": 8,
           "x": 8,
-          "y": 22
+          "y": 25
         },
         "id": 6,
         "options": {
@@ -1808,6 +1923,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
+        "description": "Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.",
         "fieldConfig": {
           "defaults": {
             "color": {
@@ -1862,7 +1978,7 @@
                 }
               ]
             },
-            "unit": "short"
+            "unit": "bytes"
           },
           "overrides": []
         },
@@ -1870,9 +1986,9 @@
           "h": 7,
           "w": 8,
           "x": 16,
-          "y": 22
+          "y": 25
         },
-        "id": 66,
+        "id": 68,
         "options": {
           "legend": {
             "calcs": [
@@ -1897,25 +2013,15 @@
               "uid": "${DS_DS_PROMETHEUS}"
             },
             "editorMode": "code",
-            "expr": "irate(pg_stat_database_conflicts[5m])",
+            "expr": "irate(pg_stat_database_temp_bytes[5m])",
             "format": "time_series",
             "intervalFactor": 1,
-            "legendFormat": "{{datname}} conflicts",
+            "legendFormat": "{{datname}}",
             "range": true,
-            "refId": "B"
-          },
-          {
-            "datasource": {
-              "uid": "${DS_DS_PROMETHEUS}"
-            },
-            "expr": "irate(pg_stat_database_deadlocks{instance=\"$instance\", datname=~\"$datname\"}[5m])",
-            "format": "time_series",
-            "intervalFactor": 1,
-            "legendFormat": "{{datname}} deadlocks",
             "refId": "A"
           }
         ],
-        "title": "Conflicts/Deadlocks",
+        "title": "Temp File (Bytes)",
         "type": "timeseries"
       },
       {
@@ -1984,7 +2090,7 @@
           "h": 7,
           "w": 8,
           "x": 0,
-          "y": 29
+          "y": 32
         },
         "id": 14,
         "options": {
@@ -2091,7 +2197,7 @@
           "h": 7,
           "w": 8,
           "x": 8,
-          "y": 29
+          "y": 32
         },
         "id": 62,
         "options": {
@@ -2126,112 +2232,6 @@
           }
         ],
         "title": "Cache Hit Rate",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheus"
-        },
-        "description": "Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "barWidthFactor": 0.6,
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "never",
-              "showValues": false,
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "min": 0,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            },
-            "unit": "bytes"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 7,
-          "w": 8,
-          "x": 16,
-          "y": 29
-        },
-        "id": 68,
-        "options": {
-          "legend": {
-            "calcs": [
-              "mean",
-              "lastNotNull",
-              "sum"
-            ],
-            "displayMode": "table",
-            "placement": "right",
-            "showLegend": true
-          },
-          "tooltip": {
-            "hideZeros": false,
-            "mode": "multi",
-            "sort": "none"
-          }
-        },
-        "pluginVersion": "12.3.0",
-        "targets": [
-          {
-            "datasource": {
-              "uid": "${DS_DS_PROMETHEUS}"
-            },
-            "editorMode": "code",
-            "expr": "irate(pg_stat_database_temp_bytes[5m])",
-            "format": "time_series",
-            "intervalFactor": 1,
-            "legendFormat": "{{datname}}",
-            "range": true,
-            "refId": "A"
-          }
-        ],
-        "title": "Temp File (Bytes)",
         "type": "timeseries"
       }
     ],
