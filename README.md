@@ -226,6 +226,10 @@ Example of the monitoring dashboards - Configmap import (Inside the UI Dashboard
 <img width="1619" height="676" alt="image" src="https://github.com/user-attachments/assets/d65f240b-4ce1-4aa2-b492-a195f633e073" />
 <img width="1587" height="781" alt="image" src="https://github.com/user-attachments/assets/b7ef8aca-2d61-4f95-ad76-54f5da2ac70f" />
 
+### RabbitMQ Dashboard
+
+<img width="1610" height="776" alt="image" src="https://github.com/user-attachments/assets/e3f43b58-552c-40d2-a6d5-d2ab53558c1a" />
+
 Features
 Event-driven architecture using RabbitMQ
 Microservice separation between order and payment workflows
