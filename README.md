@@ -215,9 +215,11 @@ Example of the monitoring dashboards - Configmap import (Dashboard -> Company Da
 ### VM Node Overview
 
 <img width="1603" height="819" alt="image" src="https://github.com/user-attachments/assets/10f48680-82e0-480b-88ca-f26149229c74" />
+
 ### K8s & Platform Overview
 
 <img width="1024" height="668" alt="image" src="https://github.com/user-attachments/assets/b8ed0477-63ac-4fe4-8c67-46bf3f7f8de2" />
+
 ### DB Overview
 
 <img width="1619" height="676" alt="image" src="https://github.com/user-attachments/assets/d65f240b-4ce1-4aa2-b492-a195f633e073" />
