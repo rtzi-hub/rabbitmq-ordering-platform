@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MONITOR_NS="monitoring"
+DASH_DIR="${ROOT_DIR}/monitoring/dashboards"
+CM_NAME="grafana-dashboards"
 
 kubectl create namespace messaging >/dev/null 2>&1 || true
 kubectl create namespace database  >/dev/null 2>&1 || true
@@ -13,6 +15,17 @@ helm repo add bitnami https://charts.bitnami.com/bitnami >/dev/null 2>&1 || true
 helm repo update >/dev/null 2>&1 || true
 
 kubectl apply -f "${ROOT_DIR}/configmaps"
+
+# Import All Dashborads inventory - Monitoring/dashborads/*.json
+kubectl -n monitoring create configmap grafana-dashboards \
+  --from-file="$DASH_DIR" \
+  --dry-run=client -o yaml > /tmp/grafana-dashboards-cm.yaml
+
+kubectl -n monitoring replace --force -f /tmp/grafana-dashboards-cm.yaml
+
+kubectl -n monitoring label cm grafana-dashboards grafana_dashboard=1 --overwrite
+kubectl -n monitoring annotate cm grafana-dashboards grafana_folder=CompanyDashboards --overwrite
+
 
 # apply real secrets if present, ignore if missing
 kubectl apply -f "${ROOT_DIR}/secrets/rabbitmq-credentials-apps.yaml"
@@ -53,3 +66,4 @@ helm upgrade --install postgres-exporter \
   prometheus-community/prometheus-postgres-exporter \
   -n database \
   -f k8s/monitoring/prom-exporters/postgresql-exporter.yaml
+

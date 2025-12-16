@@ -61,7 +61,7 @@ Copy code
      - Payment status → FAILED
      - Order status → CANCELLED
      - Inventory status → EXPIRED
-     
+
 1. Client calls `POST /orders` on **order-api**
 2. **order-api**:
    - inserts a row into the `orders` table with status `PENDING`
