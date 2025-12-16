@@ -212,7 +212,7 @@ Open:
 http://localhost:3000
 ```
 Example of the monitoring dashboards - Configmap import (Inside the UI Dashboard -> Company Dashboards):
-> If You want to add/update/remove a dashboard enter the dashboard json file to [monitoring/dashboards](https://github.com/rtzi-hub/rabbitmq-ordering-platform/k8s/monitoring/dashboards) folder Then run this [script](https://github.com/rtzi-hub/rabbitmq-ordering-platform/k8s/scripts/update-dashboards.sh)
+> If You want to add/update/remove a dashboard enter the dashboard json file to [monitoring/dashboards](https://github.com/rtzi-hub/rabbitmq-ordering-platform/blob/main/k8s/monitoring/dashboards) folder Then run this [script](https://github.com/rtzi-hub/rabbitmq-ordering-platform/blob/main/k8s/scripts/update-dashboards.sh)
 ### VM Node Overview
 
 <img width="1603" height="819" alt="image" src="https://github.com/user-attachments/assets/10f48680-82e0-480b-88ca-f26149229c74" />
