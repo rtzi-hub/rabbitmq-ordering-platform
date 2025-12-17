@@ -25,15 +25,25 @@ This project demonstrates a basic ordering and payment flow using asynchronous m
 ## Architecture
 
 User → order-api (HTTP)
+
 ↓
+
 Inventory Reservation
+
 ↓
+
 Publishes order.created to RabbitMQ
+
 ↓
+
 payment-service consumes order.created
+
 ↓
+
 Creates a PENDING payment
+
 ↓
+
 Manual approval/rejection via HTTP
 
 markdown
