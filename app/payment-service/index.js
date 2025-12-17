@@ -1,7 +1,12 @@
+// payment-service/index.js
+"use strict";
+
 require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
-const { getChannel, publishEvent } = require("./lib/rabbit");
+
+const { getChannel, publishEvent, closeRabbit } = require("./lib/rabbit");
+const { ensureBaseTopology, ensurePaymentEventsQueue } = require("./lib/rabbit-topology");
 const { query, pool } = require("./lib/postgres");
 
 const SERVICE_NAME = process.env.SERVICE_NAME || "payment-service";
@@ -11,9 +16,6 @@ const HTTP_PORT = process.env.HTTP_PORT || 8081;
 const app = express();
 app.use(bodyParser.json());
 
-/**
- * Small helper for DB transactions
- */
 async function withTx(fn) {
   const client = await pool.connect();
   try {
@@ -22,11 +24,7 @@ async function withTx(fn) {
     await client.query("COMMIT");
     return result;
   } catch (err) {
-    try {
-      await client.query("ROLLBACK");
-    } catch (_) {
-      // ignore rollback errors
-    }
+    try { await client.query("ROLLBACK"); } catch (_) {}
     throw err;
   } finally {
     client.release();
@@ -34,19 +32,17 @@ async function withTx(fn) {
 }
 
 /**
- * RabbitMQ consumer:
- *  - listens to `order.created`
- *  - creates PENDING payments (idempotent by message_id)
+ * MAIN CONSUMER: order.created -> create PENDING payment (idempotent by messageId)
  */
-async function startConsumer() {
-  const channel = await getChannel();
-  await channel.prefetch(PREFETCH);
+async function startOrderCreatedConsumer() {
+  const ch = await getChannel();
+  await ch.prefetch(PREFETCH);
 
   const eventsExchange = process.env.RABBITMQ_EXCHANGE_EVENTS || "events.topic";
   const dlxExchange = process.env.RABBITMQ_EXCHANGE_DLX || "dlx.direct";
   const queueName = "payment.order-created.q";
 
-  await channel.assertQueue(queueName, {
+  await ch.assertQueue(queueName, {
     durable: true,
     arguments: {
       "x-dead-letter-exchange": dlxExchange,
@@ -54,71 +50,72 @@ async function startConsumer() {
     },
   });
 
-  await channel.bindQueue(queueName, eventsExchange, "order.created");
-
+  await ch.bindQueue(queueName, eventsExchange, "order.created");
   console.log(`[${SERVICE_NAME}] Waiting on ${queueName}`);
 
-  channel.consume(queueName, async (msg) => {
+  ch.consume(queueName, async (msg) => {
     if (!msg) return;
 
     try {
       const content = JSON.parse(msg.content.toString());
-      console.log(`[${SERVICE_NAME}] order.created`, content);
 
       const { messageId, orderId, userId, quantity } = content;
-
       if (!messageId || !orderId || !userId || !quantity) {
-        console.warn(
-          `[${SERVICE_NAME}] invalid order.created payload, nack without requeue`
-        );
-        channel.nack(msg, false, false);
+        console.warn(`[${SERVICE_NAME}] invalid payload -> DLQ`);
+        ch.nack(msg, false, false);
         return;
       }
 
-      // Idempotency: skip if message_id already exists
-      const existing = await query(
-        "SELECT 1 FROM payments WHERE message_id = $1",
-        [messageId]
-      );
-
-      if (existing.rowCount > 0) {
-        console.log(
-          `[${SERVICE_NAME}] message ${messageId} already processed, ack`
-        );
-        channel.ack(msg);
-        return;
-      }
-
-      // Create PENDING payment row (amount = quantity * 100, e.g. cents)
+      // PRODUCTION NOTE:
+      // Add UNIQUE(payments.message_id) in DB, then use ON CONFLICT DO NOTHING.
       await query(
         `INSERT INTO payments (order_id, user_id, amount, status, message_id)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [orderId, userId, quantity * 100, "PENDING", messageId]
+         VALUES ($1, $2, $3, 'PENDING', $4)
+         ON CONFLICT (message_id) DO NOTHING`,
+        [orderId, userId, quantity * 100, messageId]
       );
 
-      console.log(
-        `[${SERVICE_NAME}] Created PENDING payment for order ${orderId}`
-      );
-
-      channel.ack(msg);
+      ch.ack(msg);
     } catch (err) {
-      console.error(`[${SERVICE_NAME}] error in consumer`, err);
-      // nack without requeue → will go to DLX
-      channel.nack(msg, false, false);
+      console.error(`[${SERVICE_NAME}] consumer error`, err);
+      ch.nack(msg, false, false); // to DLQ
     }
   });
 }
 
 /**
- * Health check
+ * OPTIONAL: consume payment.* events (only if you enable the queue)
+ * Enable:
+ *   ENABLE_PAYMENT_EVENTS_QUEUE=true
+ *   ENABLE_PAYMENT_EVENTS_CONSUMER=true
  */
+async function startPaymentEventsConsumer() {
+  if (process.env.ENABLE_PAYMENT_EVENTS_CONSUMER !== "true") return;
+
+  const ch = await getChannel();
+  await ch.prefetch(50);
+
+  const queueName = "payment.events.q";
+
+  console.log(`[${SERVICE_NAME}] Payment events consumer enabled on ${queueName}`);
+
+  ch.consume(queueName, async (msg) => {
+    if (!msg) return;
+    try {
+      const content = JSON.parse(msg.content.toString());
+      console.log(`[${SERVICE_NAME}] payment.* event`, content);
+      ch.ack(msg);
+    } catch (err) {
+      console.error(`[${SERVICE_NAME}] payment.* consumer error`, err);
+      ch.nack(msg, false, false);
+    }
+  });
+}
+
 app.get("/health", (req, res) => {
   res.json({ status: "ok", service: SERVICE_NAME });
 });
 
-/**
- * List latest payments (for debugging / UI)
- */
 app.get("/payments", async (req, res) => {
   try {
     const result = await query(
@@ -134,215 +131,165 @@ app.get("/payments", async (req, res) => {
   }
 });
 
-/**
- * Approve payment:
- *  - payments.status = SUCCEEDED
- *  - orders.status   = CONFIRMED
- *  - inventory_reservations.status = COMMITTED
- *  - emits payment.succeeded
- */
 app.post("/payments/:orderId/approve", async (req, res) => {
   const orderId = parseInt(req.params.orderId, 10);
-  if (Number.isNaN(orderId)) {
-    return res.status(400).json({ error: "invalid_order_id" });
-  }
+  if (Number.isNaN(orderId)) return res.status(400).json({ error: "invalid_order_id" });
 
   try {
     let orderForEvent = null;
 
     await withTx(async (client) => {
-      // Lock payment row for this order
       const pmt = await client.query(
         `SELECT * FROM payments WHERE order_id = $1 FOR UPDATE`,
         [orderId]
       );
-
       if (pmt.rowCount === 0) {
-        const err = new Error("payment_not_found");
-        err.statusCode = 404;
-        throw err;
+        const e = new Error("payment_not_found");
+        e.statusCode = 404;
+        throw e;
+      }
+      if (pmt.rows[0].status !== "PENDING") {
+        const e = new Error("payment_already_processed");
+        e.statusCode = 400;
+        throw e;
       }
 
-      const payment = pmt.rows[0];
-
-      if (payment.status !== "PENDING") {
-        const err = new Error("payment_already_processed");
-        err.statusCode = 400;
-        throw err;
-      }
-
-      // 1) payment -> SUCCEEDED
       await client.query(
-        `UPDATE payments
-           SET status = 'SUCCEEDED'
-         WHERE order_id = $1`,
+        `UPDATE payments SET status='SUCCEEDED' WHERE order_id=$1`,
         [orderId]
       );
 
-      // 2) order -> CONFIRMED
       const orderResult = await client.query(
-        `UPDATE orders
-           SET status = 'CONFIRMED'
-         WHERE id = $1
+        `UPDATE orders SET status='CONFIRMED'
+         WHERE id=$1
          RETURNING id, user_id, show_id, quantity`,
         [orderId]
       );
-
       if (orderResult.rowCount === 0) {
-        const err = new Error("order_not_found");
-        err.statusCode = 404;
-        throw err;
+        const e = new Error("order_not_found");
+        e.statusCode = 404;
+        throw e;
       }
-
       orderForEvent = orderResult.rows[0];
 
-      // 3) reservation -> COMMITTED
       await client.query(
         `UPDATE inventory_reservations
-           SET status = 'COMMITTED'
-         WHERE order_id = $1
-           AND status = 'RESERVED'`,
+         SET status='COMMITTED'
+         WHERE order_id=$1 AND status='RESERVED'`,
         [orderId]
       );
     });
 
-    // After DB commit: publish event (fire-and-forget)
-    if (orderForEvent) {
-      setImmediate(async () => {
-        try {
-          await publishEvent("payment.succeeded", {
-            type: "payment.succeeded",
-            orderId: orderForEvent.id,
-            userId: orderForEvent.user_id,
-            showId: orderForEvent.show_id,
-            quantity: orderForEvent.quantity,
-          });
-        } catch (e) {
-          console.error(
-            `[${SERVICE_NAME}] Failed to publish payment.succeeded`,
-            e
-          );
-        }
-      });
-    }
+    // Publish after commit
+    await publishEvent("payment.succeeded", {
+      type: "payment.succeeded",
+      orderId: orderForEvent.id,
+      userId: orderForEvent.user_id,
+      showId: orderForEvent.show_id,
+      quantity: orderForEvent.quantity,
+    });
 
     res.json({ status: "ok", orderId });
   } catch (err) {
     console.error(`[${SERVICE_NAME}] approve error`, err);
-    res
-      .status(err.statusCode || 500)
-      .json({ error: err.message || "internal_error" });
+    res.status(err.statusCode || 500).json({ error: err.message || "internal_error" });
   }
 });
 
-/**
- * Reject payment:
- *  - payments.status = FAILED
- *  - orders.status   = CANCELLED
- *  - inventory_reservations.status = EXPIRED
- *  - emits payment.failed
- */
 app.post("/payments/:orderId/reject", async (req, res) => {
   const orderId = parseInt(req.params.orderId, 10);
-  if (Number.isNaN(orderId)) {
-    return res.status(400).json({ error: "invalid_order_id" });
-  }
+  if (Number.isNaN(orderId)) return res.status(400).json({ error: "invalid_order_id" });
 
   try {
     let orderForEvent = null;
 
     await withTx(async (client) => {
-      // Lock payment row for this order
       const pmt = await client.query(
         `SELECT * FROM payments WHERE order_id = $1 FOR UPDATE`,
         [orderId]
       );
-
       if (pmt.rowCount === 0) {
-        const err = new Error("payment_not_found");
-        err.statusCode = 404;
-        throw err;
+        const e = new Error("payment_not_found");
+        e.statusCode = 404;
+        throw e;
+      }
+      if (pmt.rows[0].status !== "PENDING") {
+        const e = new Error("payment_already_processed");
+        e.statusCode = 400;
+        throw e;
       }
 
-      const payment = pmt.rows[0];
-
-      if (payment.status !== "PENDING") {
-        const err = new Error("payment_already_processed");
-        err.statusCode = 400;
-        throw err;
-      }
-
-      // 1) payment -> FAILED
       await client.query(
-        `UPDATE payments
-           SET status = 'FAILED'
-         WHERE order_id = $1`,
+        `UPDATE payments SET status='FAILED' WHERE order_id=$1`,
         [orderId]
       );
 
-      // 2) order -> CANCELLED
       const orderResult = await client.query(
-        `UPDATE orders
-           SET status = 'CANCELLED'
-         WHERE id = $1
+        `UPDATE orders SET status='CANCELLED'
+         WHERE id=$1
          RETURNING id, user_id, show_id, quantity`,
         [orderId]
       );
-
       if (orderResult.rowCount === 0) {
-        const err = new Error("order_not_found");
-        err.statusCode = 404;
-        throw err;
+        const e = new Error("order_not_found");
+        e.statusCode = 404;
+        throw e;
       }
-
       orderForEvent = orderResult.rows[0];
 
-      // 3) reservation -> EXPIRED (release seats)
       await client.query(
         `UPDATE inventory_reservations
-           SET status = 'EXPIRED'
-         WHERE order_id = $1
-           AND status = 'RESERVED'`,
+         SET status='EXPIRED'
+         WHERE order_id=$1 AND status='RESERVED'`,
         [orderId]
       );
     });
 
-    // After DB commit: publish event (fire-and-forget)
-    if (orderForEvent) {
-      setImmediate(async () => {
-        try {
-          await publishEvent("payment.failed", {
-            type: "payment.failed",
-            orderId: orderForEvent.id,
-            userId: orderForEvent.user_id,
-            showId: orderForEvent.show_id,
-            quantity: orderForEvent.quantity,
-            reason: "MANUAL_REJECTION",
-          });
-        } catch (e) {
-          console.error(
-            `[${SERVICE_NAME}] Failed to publish payment.failed`,
-            e
-          );
-        }
-      });
-    }
+    await publishEvent("payment.failed", {
+      type: "payment.failed",
+      orderId: orderForEvent.id,
+      userId: orderForEvent.user_id,
+      showId: orderForEvent.show_id,
+      quantity: orderForEvent.quantity,
+      reason: "MANUAL_REJECTION",
+    });
 
     res.json({ status: "rejected", orderId });
   } catch (err) {
     console.error(`[${SERVICE_NAME}] reject error`, err);
-    res
-      .status(err.statusCode || 500)
-      .json({ error: err.message || "internal_error" });
+    res.status(err.statusCode || 500).json({ error: err.message || "internal_error" });
   }
 });
 
-app.listen(HTTP_PORT, () => {
-  console.log(`[${SERVICE_NAME}] HTTP API listening on ${HTTP_PORT}`);
-});
+async function start() {
+  // 1) exchanges + DLQ
+  await ensureBaseTopology();
 
-// Start the consumer in the background
-startConsumer().catch((err) => {
-  console.error(`[${SERVICE_NAME}] Fatal`, err);
+  // 2) optional payment.* queue (ONLY if you need it)
+  await ensurePaymentEventsQueue();
+
+  // 3) consumers
+  await startOrderCreatedConsumer();
+  await startPaymentEventsConsumer();
+
+  // 4) HTTP
+  const server = app.listen(HTTP_PORT, () => {
+    console.log(`[${SERVICE_NAME}] HTTP API listening on ${HTTP_PORT}`);
+  });
+
+  // Graceful shutdown
+  const shutdown = async () => {
+    console.log(`[${SERVICE_NAME}] shutting down...`);
+    server.close(() => {});
+    await closeRabbit();
+    process.exit(0);
+  };
+
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+}
+
+start().catch((err) => {
+  console.error(`[${SERVICE_NAME}] Fatal startup error`, err);
   process.exit(1);
 });

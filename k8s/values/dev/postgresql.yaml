@@ -2,23 +2,20 @@
 auth:
   enablePostgresUser: true
 
-
   username: "postgresdb"
   database: "postgresdb"
-
 
   postgresPassword: ""
   password: ""
   existingSecret: "postgresql-credentials-database"
 
 primary:
-
   persistence:
     enabled: true
     type: pvc
     size: 2Gi
     storageClassName: local-path
-    
+
   resources:
     requests:
       cpu: 50m
@@ -26,7 +23,6 @@ primary:
     limits:
       cpu: 200m
       memory: 512Mi
-
 
   initdb:
     scripts:
@@ -65,11 +61,29 @@ primary:
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
 
+        -- Keep the unique index (fast + good), and also add a named constraint for clarity
+        -- (Some teams prefer constraints for schema semantics)
         CREATE UNIQUE INDEX IF NOT EXISTS ux_payments_message_id ON payments(message_id);
         CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);
         CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
 
-        -- 4. Inventory (אופציונלי)
+        -- ADD CONSTRAINT (idempotent):
+        -- Use a DO block so it won't fail if the constraint already exists.
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1
+            FROM   pg_constraint
+            WHERE  conname = 'payments_message_id_unique'
+          ) THEN
+            -- Reuse the unique index we created above
+            ALTER TABLE payments
+              ADD CONSTRAINT payments_message_id_unique
+              UNIQUE USING INDEX ux_payments_message_id;
+          END IF;
+        END$$;
+
+        -- 4. Inventory
         CREATE TABLE IF NOT EXISTS inventory_reservations (
             id         SERIAL PRIMARY KEY,
             show_id    INTEGER     NOT NULL REFERENCES shows(id) ON DELETE CASCADE,
