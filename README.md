@@ -46,9 +46,6 @@ Creates a PENDING payment
 
 Manual approval/rejection via HTTP
 
-markdown
-Copy code
-
 ### Flow Overview
 
 1. `POST /orders` (via order-api):
