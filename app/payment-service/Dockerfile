@@ -1,21 +1,20 @@
-FROM node:22-alpine AS builder
-
+# ===== deps stage (install prod dependencies) =====
+FROM node:22-trixie-slim AS deps
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-RUN npm ci --omit=dev || npm install --only=production
+RUN npm ci --omit=dev
 
-FROM node:22-alpine AS runner
-
+# ===== runtime stage (small, production image) =====
+FROM node:22-trixie-slim AS runner
 WORKDIR /usr/src/app
 ENV NODE_ENV=production
 
-COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=deps /usr/src/app/node_modules ./node_modules
 
 COPY package*.json ./
 COPY index.js ./
 COPY lib ./lib
 
 USER node
-
 CMD ["node", "index.js"]
