@@ -1,6 +1,6 @@
 # RabbitMQ Ordering Platform
 
-A small event-driven demo of an online ticket shop powered by RabbitMQ, PostgreSQL, Kubernetes, and Node.js microservices.
+A small event-driven demo of an online ticket shop powered by RabbitMQ, PostgreSQL, Kubernetes, Fully Monitored using Prometheus & Grafana and Node.js apps microservices.
 
 This project demonstrates a basic ordering and payment flow using asynchronous messaging via RabbitMQ, with a clear separation of concerns between services.
 
