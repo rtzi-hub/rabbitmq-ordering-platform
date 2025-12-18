@@ -40,6 +40,8 @@ spec:
                 name: rabbitmq-config-apps
             - configMapRef:
                 name: postgresql-config-apps
+            - configMapRef:
+                name: payment-service-config
             - secretRef:
                 name: rabbitmq-credentials-apps
             - secretRef:
