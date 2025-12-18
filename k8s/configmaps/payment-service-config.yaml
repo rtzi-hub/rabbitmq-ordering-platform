@@ -4,8 +4,8 @@ metadata:
   name: payment-service-config
   namespace: apps
 data:
-  ENABLE_PAYMENT_EVENTS_QUEUE: "true"    
-  ENABLE_PAYMENT_EVENTS_CONSUMER: "false"
+  ENABLE_PAYMENT_EVENTS_QUEUE: "true"
+  ENABLE_PAYMENT_EVENTS_CONSUMER: "true"
   PAYMENT_EVENTS_TTL_MS: "86400000"
 
   RABBITMQ_EXCHANGE_EVENTS: "events.topic"
