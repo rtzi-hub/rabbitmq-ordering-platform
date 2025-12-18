@@ -1,6 +1,6 @@
 image:
   repository: rontz/payment-service
-  tag: "v3"
+  tag: "v4"
   pullPolicy: Always
 
 fullnameOverride: payment-service

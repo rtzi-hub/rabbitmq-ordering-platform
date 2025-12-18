@@ -5,7 +5,7 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 
-const { getChannel, publishEvent, closeRabbit } = require("./lib/rabbit");
+const { getChannel, getPublisherChannel, publishEvent, closeRabbit } = require("./lib/rabbit");
 const {
     ensureBaseTopology,
     ensureOrderCreatedQueue,
@@ -270,6 +270,17 @@ async function start() {
     await ensureBaseTopology();
     await ensureOrderCreatedQueue();
     await ensurePaymentEventsQueue();
+
+    // 2) Pre-initialize publisher channel to avoid delays on first publish
+    try {
+        await getPublisherChannel();
+        console.log(`[${SERVICE_NAME}] Publisher channel initialized`);
+    } catch (err) {
+        console.error(`[${SERVICE_NAME}] Failed to initialize publisher channel:`, err);
+        // Continue anyway - channel will be created on first use
+    }
+
+    // 3) Start consumers
     await startOrderCreatedConsumer();
     await startPaymentEventsConsumer();
 

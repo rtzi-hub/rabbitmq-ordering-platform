@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 
-const { publishEvent } = require("./lib/rabbit");
+const { publishEvent, getPublisherChannel } = require("./lib/rabbit");
 const { query, pool } = require("./lib/postgres");
 
 const SERVICE_NAME = process.env.SERVICE_NAME || "order-api";
@@ -718,7 +718,23 @@ app.post("/orders", async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 8080;
-app.listen(port, () => {
-  console.log(`[order-api] Listening on port ${port}`);
+async function start() {
+  // Pre-initialize publisher channel to avoid delays on first publish
+  try {
+    await getPublisherChannel();
+    console.log(`[${SERVICE_NAME}] Publisher channel initialized`);
+  } catch (err) {
+    console.error(`[${SERVICE_NAME}] Failed to initialize publisher channel:`, err);
+    // Continue anyway - channel will be created on first use
+  }
+
+  const port = process.env.PORT || 8080;
+  app.listen(port, () => {
+    console.log(`[${SERVICE_NAME}] Listening on port ${port}`);
+  });
+}
+
+start().catch((err) => {
+  console.error(`[${SERVICE_NAME}] Fatal startup error`, err);
+  process.exit(1);
 });

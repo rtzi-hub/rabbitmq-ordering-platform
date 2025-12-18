@@ -239,6 +239,7 @@ async function closeRabbit() {
 
 module.exports = {
     getChannel,
+    getPublisherChannel,
     publishEvent,
     closeRabbit,
 };
