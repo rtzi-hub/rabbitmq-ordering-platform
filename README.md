@@ -235,7 +235,8 @@ Example of the monitoring dashboards - Configmap import (Inside the UI Dashboard
 
 ### RabbitMQ Dashboard
 
-<img width="1610" height="776" alt="image" src="https://github.com/user-attachments/assets/e3f43b58-552c-40d2-a6d5-d2ab53558c1a" />
+<img width="1601" height="825" alt="image" src="https://github.com/user-attachments/assets/c68f8872-8c45-4eb2-aa07-5ea3f7292fc6" />
+<img width="1601" height="624" alt="image" src="https://github.com/user-attachments/assets/c8175b3f-798c-4860-98dd-3afb3db55853" />
 
 Features
 Event-driven architecture using RabbitMQ
