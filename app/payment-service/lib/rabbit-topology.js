@@ -1,52 +1,61 @@
-// lib/rabbit-topology.js
+// payment-service/lib/rabbit-topology.js
 "use strict";
 
-const { getChannel } = require("./rabbit");
+const EVENTS_EXCHANGE = process.env.RABBITMQ_EXCHANGE_EVENTS || "events.topic";
+const DLX_EXCHANGE = process.env.RABBITMQ_EXCHANGE_DLX || "dlx.direct";
 
-async function ensureBaseTopology() {
-  const ch = await getChannel();
+const ORDER_CREATED_QUEUE =
+  process.env.RABBITMQ_ORDER_CREATED_QUEUE || "payment.order-created.q";
 
-  const dlxExchange = process.env.RABBITMQ_EXCHANGE_DLX || "dlx.direct";
+const PAYMENT_EVENTS_QUEUE =
+  process.env.RABBITMQ_PAYMENT_EVENTS_QUEUE || "payment.events.q";
 
-  // Global DLQ queue (dead-letter target)
-  await ch.assertQueue("events.dlq", { durable: true });
-  await ch.bindQueue("events.dlq", dlxExchange, "events.dlq");
+const DLQ_QUEUE = process.env.RABBITMQ_DLQ_QUEUE || "events.dlq.q";
+const DLQ_ROUTING_KEY = process.env.RABBITMQ_DLQ_ROUTING_KEY || "events.dlq";
+
+function getRabbitChannel() {
+  // Lazy require to avoid circular init issues
+  const { getChannel } = require("./rabbit");
+  return getChannel();
 }
 
-/**
- * Optional: create a queue for payment events when you NEED it.
- * This makes payment.succeeded/payment.failed routable.
- *
- * Enable by setting: ENABLE_PAYMENT_EVENTS_QUEUE=true
- */
-async function ensurePaymentEventsQueue() {
-  if (process.env.ENABLE_PAYMENT_EVENTS_QUEUE !== "true") return;
+async function ensureBaseTopology() {
+  const ch = await getRabbitChannel();
+  await ch.assertExchange(EVENTS_EXCHANGE, "topic", { durable: true });
+  await ch.assertExchange(DLX_EXCHANGE, "direct", { durable: true });
+  await ch.assertQueue(DLQ_QUEUE, { durable: true });
+  await ch.bindQueue(DLQ_QUEUE, DLX_EXCHANGE, DLQ_ROUTING_KEY);
+}
 
-  const ch = await getChannel();
-
-  const eventsExchange = process.env.RABBITMQ_EXCHANGE_EVENTS || "events.topic";
-  const dlxExchange = process.env.RABBITMQ_EXCHANGE_DLX || "dlx.direct";
-
-  const queueName = "payment.events.q";
-
-  await ch.assertQueue(queueName, {
+async function ensureOrderCreatedQueue() {
+  const ch = await getRabbitChannel();
+  await ch.assertQueue(ORDER_CREATED_QUEUE, {
     durable: true,
     arguments: {
-      "x-dead-letter-exchange": dlxExchange,
-      "x-dead-letter-routing-key": "events.dlq",
-
-      // Production safety so the queue doesn't grow forever if nobody consumes
-      "x-message-ttl": 24 * 60 * 60 * 1000, // 24h
-      "x-max-length": 100000,
-      "x-overflow": "drop-head",
+      "x-dead-letter-exchange": DLX_EXCHANGE,
+      "x-dead-letter-routing-key": DLQ_ROUTING_KEY,
     },
   });
+  await ch.bindQueue(ORDER_CREATED_QUEUE, EVENTS_EXCHANGE, "order.created");
+}
 
-  // Bind payment.* so payment.succeeded + payment.failed are routable
-  await ch.bindQueue(queueName, eventsExchange, "payment.*");
+async function ensurePaymentEventsQueue() {
+  if (process.env.ENABLE_PAYMENT_EVENTS_QUEUE !== "true") return;
+  const ch = await getRabbitChannel();
+  const ttlMs = parseInt(process.env.PAYMENT_EVENTS_TTL_MS || "0", 10);
+  const args = {
+    "x-dead-letter-exchange": DLX_EXCHANGE,
+    "x-dead-letter-routing-key": DLQ_ROUTING_KEY,
+  };
+  if (!Number.isNaN(ttlMs) && ttlMs > 0) {
+    args["x-message-ttl"] = ttlMs;
+  }
+  await ch.assertQueue(PAYMENT_EVENTS_QUEUE, { durable: true, arguments: args });
+  await ch.bindQueue(PAYMENT_EVENTS_QUEUE, EVENTS_EXCHANGE, "payment.*");
 }
 
 module.exports = {
   ensureBaseTopology,
+  ensureOrderCreatedQueue,
   ensurePaymentEventsQueue,
 };

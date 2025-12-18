@@ -1,6 +1,6 @@
 image:
   repository: rontz/order-api
-  tag: "v1"
+  tag: "v2"
   pullPolicy: Always
 
 fullnameOverride: order-api

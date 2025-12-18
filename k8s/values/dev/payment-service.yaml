@@ -1,6 +1,6 @@
 image:
   repository: rontz/payment-service
-  tag: "v1"
+  tag: "v3"
   pullPolicy: Always
 
 fullnameOverride: payment-service
@@ -39,3 +39,5 @@ initContainers:
         name: rabbitmq-config-apps
     - secretRef:
         name: rabbitmq-credentials-apps
+    - configMapRef:
+        name: payment-service-config

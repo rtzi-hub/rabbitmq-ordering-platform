@@ -10,8 +10,11 @@ let connectionPromise = null;
 let consumerChannel = null;
 let consumerChannelPromise = null;
 
-let publisherChannel = null; // confirm channel
+let publisherChannel = null;
 let publisherChannelPromise = null;
+
+// Track publishes so we can fail fast on "return" (unroutable)
+const pendingPublishes = new Map();
 
 function uuid() {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
@@ -20,27 +23,23 @@ function uuid() {
 function buildAmqpUrl() {
   const host = process.env.RABBITMQ_HOST || "localhost";
   const port = process.env.RABBITMQ_PORT || "5672";
-  const user =
-    process.env.RABBITMQ_USERNAME || process.env.RABBITMQ_USER || "guest";
-  const pass =
-    process.env.RABBITMQ_PASSWORD || process.env.RABBITMQ_PASS || "guest";
+  const user = process.env.RABBITMQ_USERNAME || process.env.RABBITMQ_USER || "guest";
+  const pass = process.env.RABBITMQ_PASSWORD || process.env.RABBITMQ_PASS || "guest";
 
-  const base =
-    process.env.RABBITMQ_URL || `amqp://${user}:${pass}@${host}:${port}`;
+  const base = process.env.RABBITMQ_URL || `amqp://${user}:${pass}@${host}:${port}`;
   const vhost = process.env.RABBITMQ_VHOST || "/";
 
   let u;
   try {
     u = new URL(base);
   } catch (_) {
-    return base; // fallback
+    return base;
   }
 
   const vhostPath = vhost === "/" ? "/" : `/${vhost.replace(/^\//, "")}`;
   if (!u.pathname || u.pathname === "/" || u.pathname === "") {
     u.pathname = vhostPath;
   }
-
   return u.toString();
 }
 
@@ -53,6 +52,14 @@ function resetState() {
 
   publisherChannel = null;
   publisherChannelPromise = null;
+
+  // fail any inflight publishes
+  for (const [, p] of pendingPublishes) {
+    try {
+      p.reject(new Error("rabbitmq_connection_reset"));
+    } catch (_) {}
+  }
+  pendingPublishes.clear();
 }
 
 async function getConnection() {
@@ -93,17 +100,6 @@ async function getConnection() {
   return connectionPromise;
 }
 
-async function assertExchanges(ch) {
-  const eventsExchange = process.env.RABBITMQ_EXCHANGE_EVENTS || "events.topic";
-  const dlxExchange = process.env.RABBITMQ_EXCHANGE_DLX || "dlx.direct";
-
-  await ch.assertExchange(eventsExchange, "topic", { durable: true });
-  await ch.assertExchange(dlxExchange, "direct", { durable: true });
-}
-
-/**
- * Consumer channel (regular channel) - use for consuming / queue ops.
- */
 async function getChannel() {
   if (consumerChannel) return consumerChannel;
   if (consumerChannelPromise) return consumerChannelPromise;
@@ -122,8 +118,6 @@ async function getChannel() {
       consumerChannelPromise = null;
     });
 
-    await assertExchanges(ch);
-
     consumerChannel = ch;
     return ch;
   })();
@@ -131,9 +125,6 @@ async function getChannel() {
   return consumerChannelPromise;
 }
 
-/**
- * Publisher channel (confirm channel) - safer publishing with broker confirms.
- */
 async function getPublisherChannel() {
   if (publisherChannel) return publisherChannel;
   if (publisherChannelPromise) return publisherChannelPromise;
@@ -141,20 +132,6 @@ async function getPublisherChannel() {
   publisherChannelPromise = (async () => {
     const conn = await getConnection();
     const ch = await conn.createConfirmChannel();
-
-    // IMPORTANT: if we publish with "mandatory: true" and the message is unroutable,
-    // RabbitMQ returns it. We log it here (production-safe visibility).
-    ch.on("return", (msg) => {
-      const rk = msg?.fields?.routingKey;
-      const ex = msg?.fields?.exchange;
-      const mid = msg?.properties?.messageId;
-      console.error(
-        "[rabbit] UNROUTABLE (returned to publisher)",
-        "exchange=", ex,
-        "rk=", rk,
-        "messageId=", mid
-      );
-    });
 
     ch.on("error", (err) => {
       console.error("[rabbit] publisher channel error:", err?.message || err);
@@ -166,7 +143,28 @@ async function getPublisherChannel() {
       publisherChannelPromise = null;
     });
 
-    await assertExchanges(ch);
+    // Fired when "mandatory" publish has no route
+    ch.on("return", (msg) => {
+      const exchange = msg?.fields?.exchange;
+      const rk = msg?.fields?.routingKey;
+      const messageId = msg?.properties?.messageId;
+
+      console.error(
+        "[rabbit] UNROUTABLE (returned to publisher)",
+        "exchange=",
+        exchange,
+        "rk=",
+        rk,
+        "messageId=",
+        messageId
+      );
+
+      if (messageId && pendingPublishes.has(messageId)) {
+        const p = pendingPublishes.get(messageId);
+        pendingPublishes.delete(messageId);
+        p.reject(new Error(`unroutable exchange=${exchange} rk=${rk} messageId=${messageId}`));
+      }
+    });
 
     publisherChannel = ch;
     return ch;
@@ -180,6 +178,7 @@ async function publishEvent(routingKey, payload = {}, options = {}) {
   const exchange = process.env.RABBITMQ_EXCHANGE_EVENTS || "events.topic";
 
   const messageId = payload.messageId || uuid();
+  const correlationId = options.correlationId || messageId;
 
   const message = {
     messageId,
@@ -189,28 +188,39 @@ async function publishEvent(routingKey, payload = {}, options = {}) {
 
   const buffer = Buffer.from(JSON.stringify(message));
 
-  const mandatoryDefault = process.env.RABBITMQ_PUBLISH_MANDATORY !== "false"; // default TRUE
-  const waitConfirmsDefault = process.env.RABBITMQ_WAIT_FOR_CONFIRMS !== "false"; // default TRUE
+  const mandatory =
+    options.mandatory ??
+    (process.env.RABBITMQ_PUBLISH_MANDATORY === "true"); // default: false unless enabled
 
-  const ok = ch.publish(exchange, routingKey, buffer, {
-    contentType: "application/json",
-    deliveryMode: 2, // persistent
-    messageId, // AMQP property
-    correlationId: options.correlationId || messageId,
-    timestamp: Date.now(),
-    mandatory: options.mandatory ?? mandatoryDefault, // ✅ prevents silent drop
-    ...options,
+  return await new Promise((resolve, reject) => {
+    pendingPublishes.set(messageId, { resolve, reject });
+
+    const ok = ch.publish(
+      exchange,
+      routingKey,
+      buffer,
+      {
+        contentType: "application/json",
+        deliveryMode: 2,
+        messageId,
+        correlationId,
+        timestamp: Date.now(),
+        mandatory,
+        ...options,
+      },
+      (err) => {
+        // broker confirm callback
+        if (pendingPublishes.has(messageId)) pendingPublishes.delete(messageId);
+
+        if (err) return reject(err);
+        resolve(message);
+      }
+    );
+
+    if (!ok) {
+      console.warn("[rabbit] publish backpressure (buffer full) for", routingKey);
+    }
   });
-
-  if (!ok) {
-    console.warn("[rabbit] publish returned false (backpressure) for", routingKey);
-  }
-
-  if (waitConfirmsDefault) {
-    await ch.waitForConfirms(); // ✅ confirm publish accepted by broker
-  }
-
-  return message;
 }
 
 async function closeRabbit() {
