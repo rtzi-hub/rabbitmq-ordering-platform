@@ -40,7 +40,6 @@ async function ensureOrderCreatedQueue() {
 }
 
 async function ensurePaymentEventsQueue() {
-  if (process.env.ENABLE_PAYMENT_EVENTS_QUEUE !== "true") return;
   const ch = await getRabbitChannel();
   const ttlMs = parseInt(process.env.PAYMENT_EVENTS_TTL_MS || "0", 10);
   const args = {
