@@ -444,9 +444,6 @@ config:
         Logstash_Format On
         Logstash_Prefix node
         Suppress_Type_Name On
-        Replace_Dots On
-        Generate_ID On
-        net.keepalive On
         Retry_Limit False
 
   ## https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/upstream-servers
