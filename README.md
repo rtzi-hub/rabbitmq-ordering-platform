@@ -226,7 +226,8 @@ Example of the monitoring dashboards - Configmap import (Inside the UI Dashboard
 
 ### K8s & Platform Overview
 
-<img width="1024" height="668" alt="image" src="https://github.com/user-attachments/assets/b8ed0477-63ac-4fe4-8c67-46bf3f7f8de2" />
+<img width="1007" height="656" alt="image" src="https://github.com/user-attachments/assets/802a5ba4-da9c-47b8-96a1-f181309652d8" />
+
 
 ### DB Overview
 
