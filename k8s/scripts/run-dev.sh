@@ -80,7 +80,12 @@ helm repo add elastic https://helm.elastic.co
 helm repo update >/dev/null 2>&1 || true
 
 helm upgrade --install elasticsearch \
-  bitnami/elasticsearch \
+  elastic/elasticsearch \
   -f "${ROOT_DIR}/values/dev/elasticsearch.yaml" \
+  -n logging
+
+helm upgrade --install kibana \
+  elastic/kibana \
+  -f "${ROOT_DIR}/values/dev/kibana.yaml" \
   -n logging
 

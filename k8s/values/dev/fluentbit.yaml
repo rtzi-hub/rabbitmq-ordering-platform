@@ -429,16 +429,21 @@ config:
     [OUTPUT]
         Name es
         Match kube.*
-        Host elasticsearch-master
+        Host elasticsearch-master.logging.svc.cluster.local
+        Port 9200
         Logstash_Format On
+        Logstash_Prefix kubernetes
+        Suppress_Type_Name On
         Retry_Limit False
 
     [OUTPUT]
         Name es
         Match host.*
-        Host elasticsearch-master
+        Host elasticsearch-master.logging.svc.cluster.local
+        Port 9200
         Logstash_Format On
         Logstash_Prefix node
+        Suppress_Type_Name On
         Retry_Limit False
 
   ## https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/upstream-servers
