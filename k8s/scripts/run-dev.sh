@@ -6,10 +6,11 @@ MONITOR_NS="monitoring"
 DASH_DIR="${ROOT_DIR}/monitoring/dashboards"
 CM_NAME="grafana-dashboards"
 
-kubectl create namespace messaging >/dev/null 2>&1 || true
-kubectl create namespace database  >/dev/null 2>&1 || true
-kubectl create namespace apps      >/dev/null 2>&1 || true
-kubectl create namespace monitoring      >/dev/null 2>&1 || true
+kubectl create namespace messaging   >/dev/null 2>&1 || true
+kubectl create namespace database    >/dev/null 2>&1 || true
+kubectl create namespace apps        >/dev/null 2>&1 || true
+kubectl create namespace monitoring  >/dev/null 2>&1 || true
+kubectl create namespace logging     >/dev/null 2>&1 || true
 
 helm repo add bitnami https://charts.bitnami.com/bitnami >/dev/null 2>&1 || true
 helm repo update >/dev/null 2>&1 || true
@@ -53,7 +54,7 @@ helm upgrade --install payment-service \
   -n apps
 
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
+helm repo update >/dev/null 2>&1 || true
 
 helm upgrade --install kube-prometheus-stack \
   --create-namespace \
@@ -66,4 +67,25 @@ helm upgrade --install postgres-exporter \
   prometheus-community/prometheus-postgres-exporter \
   -n database \
   -f k8s/monitoring/prom-exporters/postgresql-exporter.yaml
+
+helm repo add fluent https://fluent.github.io/helm-charts
+helm repo update >/dev/null 2>&1 || true
+
+helm upgrade --install fluent-bit \
+  fluent/fluent-bit \
+  -f "${ROOT_DIR}/values/dev/fluentbit.yaml" \
+  -n logging
+
+helm repo add elastic https://helm.elastic.co
+helm repo update >/dev/null 2>&1 || true
+
+helm upgrade --install elasticsearch \
+  elastic/elasticsearch \
+  -f "${ROOT_DIR}/values/dev/elasticsearch.yaml" \
+  -n logging
+
+helm upgrade --install kibana \
+  elastic/kibana \
+  -f "${ROOT_DIR}/values/dev/kibana.yaml" \
+  -n logging
 
