@@ -15,7 +15,6 @@ jobs:
   test:
     name: Python check
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -67,6 +66,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build & push
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.path }}
@@ -79,3 +79,11 @@ jobs:
 
       - name: Print digest
         run: echo "DIGEST for ${{ matrix.image }} = ${{ steps.build.outputs.digest }}"
+
+      - name: Write digest to run summary
+        run: |
+          echo "### ${{ matrix.image }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Tags:" >> $GITHUB_STEP_SUMMARY
+          echo "  - ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:sha-${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "  - ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "- Digest: \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
