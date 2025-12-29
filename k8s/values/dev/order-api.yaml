@@ -1,7 +1,8 @@
 image:
   repository: rontz/order-api
   tag: "v5"
-  pullPolicy: Always
+  digest: ""
+  pullPolicy: IfNotPresent
 
 fullnameOverride: order-api
 

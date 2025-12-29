@@ -1,7 +1,8 @@
 image:
   repository: rontz/payment-service
   tag: "v5"
-  pullPolicy: Always
+  digest: "" 
+  pullPolicy: IfNotPresent
 
 fullnameOverride: payment-service
 
