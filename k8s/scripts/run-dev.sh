@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MONITOR_NS="monitoring"
+DATABASE_NS="database"
+LOGGING_NS="logging"
 DASH_DIR="${ROOT_DIR}/monitoring/dashboards"
 CM_NAME="grafana-dashboards"
 
@@ -65,7 +67,7 @@ helm upgrade --install kube-prometheus-stack \
 
 helm upgrade --install postgres-exporter \
   prometheus-community/prometheus-postgres-exporter \
-  -n database \
+  -n "${DATABASE_NS}" \
   -f k8s/monitoring/prom-exporters/postgresql-exporter.yaml
 
 helm repo add fluent https://fluent.github.io/helm-charts
@@ -74,7 +76,7 @@ helm repo update >/dev/null 2>&1 || true
 helm upgrade --install fluent-bit \
   fluent/fluent-bit \
   -f "${ROOT_DIR}/values/dev/fluentbit.yaml" \
-  -n logging
+  -n "${LOGGING_NS}"
 
 helm repo add elastic https://helm.elastic.co
 helm repo update >/dev/null 2>&1 || true
@@ -82,10 +84,10 @@ helm repo update >/dev/null 2>&1 || true
 helm upgrade --install elasticsearch \
   elastic/elasticsearch \
   -f "${ROOT_DIR}/values/dev/elasticsearch.yaml" \
-  -n logging
+  -n "${LOGGING_NS}"
 
 helm upgrade --install kibana \
   elastic/kibana \
   -f "${ROOT_DIR}/values/dev/kibana.yaml" \
-  -n logging
+  -n "${LOGGING_NS}"
 
