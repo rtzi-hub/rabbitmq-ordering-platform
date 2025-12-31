@@ -94,13 +94,13 @@ priorityClassName: ""
 
 httpPort: 5601
 
-extraVolumes:
-  []
+# extraVolumes:
+#   []
   # - name: extras
   #   emptyDir: {}
 
-extraVolumeMounts:
-  []
+# extraVolumeMounts:
+  # []
   # - name: extras
   #   mountPath: /usr/share/extras
   #   readOnly: true

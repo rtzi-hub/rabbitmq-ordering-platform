@@ -1,48 +1,25 @@
 clusterName: "elasticsearch"
 nodeGroup: "master"
 
-# For the master nodeGroup keep this empty.
-masterService: ""
-
-# Single node does all roles (lab)
-roles:
-  - master
-  - data
-  - ingest
-
+roles: [master, data, ingest]
 replicas: 1
 minimumMasterNodes: 1
 
-# Disable chart-generated certs and run HTTP
-createCert: false
-protocol: http
-httpPort: 9200
-transportPort: 9300
+# REQUIRED for elastic/kibana chart hooks:
+createCert: true
+protocol: https
 
-# Disable elastic password secret (since we disable security completely)
 secret:
-  enabled: false
+  enabled: true
+  password: "passtest"   # optional but nice for lab
 
-# IMPORTANT for 1-node LAB:
-# Cluster health will be YELLOW (no replicas), so don't wait for GREEN
-# more forgiving for slow lab nodes
+# 1-node lab: don't wait for green
 clusterHealthCheckParams: "wait_for_status=yellow&timeout=30s"
 
-readinessProbe:
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  timeoutSeconds: 10
-  failureThreshold: 12
-  successThreshold: 1
+# keep your lab sizing / no PVC if you want
+persistence:
+  enabled: false
 
-# Hard-disable security + TLS inside Elasticsearch
-esConfig:
-  elasticsearch.yml: |
-    xpack.security.enabled: false
-    xpack.security.http.ssl.enabled: false
-    xpack.security.transport.ssl.enabled: false
-
-# Small lab resources (adjust if you have more RAM)
 esJavaOpts: "-Xms512m -Xmx512m"
 resources:
   requests:
@@ -52,27 +29,8 @@ resources:
     cpu: "1000m"
     memory: "1Gi"
 
-# Allow scheduling on control-plane (your lab node)
-tolerations:
-  - key: "node-role.kubernetes.io/control-plane"
-    operator: "Exists"
-    effect: "NoSchedule"
-  - key: "node-role.kubernetes.io/master"
-    operator: "Exists"
-    effect: "NoSchedule"
-
-# Single node => don't block on anti-affinity rules
 antiAffinity: "soft"
 
-# LAB: avoid PVC headaches (data is ephemeral)
-persistence:
-  enabled: false
-
-# Keep sysctl init (vm.max_map_count) enabled
 sysctlInitContainer:
   enabled: true
 sysctlVmMaxMapCount: 262144
-
-extraEnvs:
-  - name: ELASTIC_PASSWORD
-    value: "passtest"
