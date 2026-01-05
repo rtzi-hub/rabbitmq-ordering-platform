@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kibana-import-saved-objects
+  namespace: logging
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: import
+          image: curlimages/curl:8.5.0
+          env:
+            - name: ELASTIC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-master-credentials
+                  key: username
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-master-credentials
+                  key: password
+          volumeMounts:
+            - name: saved-objects
+              mountPath: /import
+              readOnly: true
+          command: ["/bin/sh","-c"]
+          args:
+          - |
+            set -e
+            KIBANA_URL="http://kibana-kibana:5601"
+
+            echo "Waiting for Kibana (with auth)..."
+            while true; do
+              code="$(curl -s -u "${ELASTIC_USERNAME}:${ELASTIC_PASSWORD}" \
+                -o /dev/null -w "%{http_code}" \
+                "$KIBANA_URL/api/status" || true)"
+
+              if [ "$code" = "200" ]; then
+                break
+              fi
+
+              echo "Kibana not ready yet (HTTP $code)..."
+              sleep 5
+            done
+
+            echo "Importing saved objects..."
+            curl -sS --fail-with-body \
+              -u "${ELASTIC_USERNAME}:${ELASTIC_PASSWORD}" \
+              -H "kbn-xsrf: true" \
+              -F file=@/import/kibana-dashboards.ndjson \
+              "$KIBANA_URL/api/saved_objects/_import?overwrite=true"
+
+            echo "Done."
+      volumes:
+        - name: saved-objects
+          configMap:
+            name: kibana-saved-objects
+            items:
+              - key: kibana-dashboards.ndjson
+                path: kibana-dashboards.ndjson

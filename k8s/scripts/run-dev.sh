@@ -92,3 +92,15 @@ helm upgrade --install kibana \
   -f "${ROOT_DIR}/values/dev/kibana.yaml" \
   -n "${LOGGING_NS}"
 
+# Kibana dashboard auto-import (ConfigMap + Job) - Sorted By Namespaces
+
+# Wait for Kibana to be ready
+kubectl -n "${LOGGING_NS}" rollout status deploy/kibana-kibana --timeout=300s || true
+
+kubectl -n logging create configmap kibana-saved-objects \
+  --from-file=kibana-dashboards.ndjson="${ROOT_DIR}/logging/kibana-dashboards.ndjson" \
+  -o yaml --dry-run=client | kubectl apply -f -
+
+kubectl -n logging delete job kibana-import-saved-objects --ignore-not-found
+kubectl -n logging apply -f "${ROOT_DIR}/logging/kibana-import-job.yaml"
+
