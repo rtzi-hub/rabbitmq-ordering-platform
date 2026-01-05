@@ -239,53 +239,81 @@ Example of the monitoring dashboards - Configmap import (Inside the UI Dashboard
 <img width="1601" height="825" alt="image" src="https://github.com/user-attachments/assets/c68f8872-8c45-4eb2-aa07-5ea3f7292fc6" />
 <img width="1601" height="624" alt="image" src="https://github.com/user-attachments/assets/c8175b3f-798c-4860-98dd-3afb3db55853" />
 
-### Kibana Logs Dashboard
-Features
-Event-driven architecture using RabbitMQ
-Microservice separation between order and payment workflows
-Manual payment simulation via HTTP endpoints
-Dashboard to track shows, orders, payments
-Helm-based deployment to Kubernetes
 
-Auto-initialized and seeded PostgreSQL database
+### Logging (EFK: Elasticsearch + Fluent Bit + Kibana)
 
-Database Schema
-Tables:
-shows – Event data (3 pre-seeded rows)
-orders – Order records
-payments – Payment attempts
-inventory_reservations – Reserved seats per order
+This project ships logs to Elasticsearch using Fluent Bit, and visualizes them in Kibana.
 
-PostgreSQL Access (Dev)
-```bash
-kubectl exec -n database -it postgresql-0 -- \
-  psql -U postgresdb -d postgresdb
-```
-Example Queries
-```sql
-SELECT id, name, capacity FROM shows;
-SELECT * FROM orders;
-SELECT * FROM payments;
-SELECT * FROM inventory_reservations;
-```
-Configuration
-Helm values: k8s/values/dev/
+Fluent Bit creates two daily indices:
 
-ConfigMaps: k8s/configmaps/
+kubernetes-YYYY.MM.DD → Kubernetes container logs (/var/log/containers/*.log)
 
-Secrets: k8s/secrets/ (not committed to version control)
+node-YYYY.MM.DD → Node/kubelet logs (systemd kubelet.service)
 
-Examples
-Create an order → View in dashboard
+Access Kibana
 
-Approve or reject payments → Observe status changes
-
-View logs for debugging:
+Port-forward Kibana:
 
 ```bash
-# order-api
-kubectl -n apps logs deploy/order-api-order-api-chart --tail=50
-# payment-service
-kubectl -n apps logs deploy/payment-service-payment-service-chart --tail=50
+kubectl -n logging port-forward svc/kibana-kibana 5601:5601
 ```
+
+Open:
+```bash
+http://localhost:5601
+```
+
+Get the Elasticsearch credentials (used by Kibana login if prompted):
+```bash
+kubectl -n logging get secret elasticsearch-master-credentials \
+  -o jsonpath='{.data.username}' | base64 -d; echo
+```
+```bash
+kubectl -n logging get secret elasticsearch-master-credentials \
+  -o jsonpath='{.data.password}' | base64 -d; echo
+```
+
+### Create Kibana Data Views
+
+In Kibana:
+
+Go to Stack Management → Data Views → Create data view
+
+### Create these two data views:
+
+1) Kubernetes logs
+
+Name: kubernetes
+
+Index pattern: kubernetes-*
+
+Timestamp field: @timestamp
+
+2) Node logs
+
+Name: node
+
+Index pattern: node-*
+
+Timestamp field: @timestamp
+
+### View Logs
+
+Go to Discover and select:
+
+kubernetes-* to see application/container logs
+
+node-* to see kubelet/node logs
+
+(Optional) Verify indices from Elasticsearch
+kubectl -n logging exec -it elasticsearch-master-0 -- sh -c \
+'curl -k -u elastic:$(cat /run/secrets/kubernetes.io/serviceaccount/token 2>/dev/null || echo passtest) https://localhost:9200/_cat/indices?v | egrep "kubernetes-|node-"'
+
+### Troubleshooting
+
+If Fluent Bit shows HTTP status=401 ... missing authentication credentials:
+
+Ensure Fluent Bit outputs use HTTP_User ${ELASTIC_USERNAME} / HTTP_Passwd ${ELASTIC_PASSWORD}
+
+Ensure the Fluent Bit pod has these env vars from the elasticsearch-master-credentials secret.
 
