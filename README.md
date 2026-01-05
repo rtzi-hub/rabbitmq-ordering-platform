@@ -318,3 +318,4 @@ Ensure Fluent Bit outputs use HTTP_User ${ELASTIC_USERNAME} / HTTP_Passwd ${ELAS
 
 Ensure the Fluent Bit pod has these env vars from the elasticsearch-master-credentials secret.
 
+###
