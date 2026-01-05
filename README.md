@@ -82,17 +82,20 @@ Manual approval/rejection via HTTP
 
 ### Project structure
 ```bash
-rabbitmq-ordering-platform/
-├─ order-api/                 # Order HTTP API
-├─ payment-service/           # Payment worker
+rabbitmq-ordering-platform/ 
+└─ app/   
+   ├─ order-api/                 # Order HTTP API
+   └─ payment-service/           # Payment worker
+├─ ci-test/ 
 └─ k8s/
    ├─ charts/                 # Local Helm charts (order-api, payment-service, etc.)
    ├─ configmaps/             # Shared nonsecret configuration (RabbitMQ, Postgres)
-   ├─ secrets/                # Secrets manifests (real secrets are .gitignored)
+   ├─ secrets/                # Secrets manifests
    ├─ values/
    │  └─ dev/                 # Dev environment values (RabbitMQ, Postgres, services)
    └─ scripts/
       ├─ run-dev.sh           # Spin up full dev stack
+      ├─ cleanup-kibana.sh 
       └─ cleanup-dev.sh       # (optional) tear down / reset dev stack
 ```
 
