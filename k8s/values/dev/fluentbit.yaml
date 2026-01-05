@@ -22,12 +22,14 @@ extraVolumeMounts:
     mountPath: /fluent-bit/tls
     readOnly: true
 
-# ---- 2) Provide credentials as env vars (from secret) ----
-# Chart supports passing raw Kubernetes env objects (valueFrom works)
+# Provide credentials as env vars (from secret)
 env:
-  - name: ES_USERNAME
-    value: "elastic"
-  - name: ES_PASSWORD
+  - name: ELASTIC_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: elasticsearch-master-credentials
+        key: username
+  - name: ELASTIC_PASSWORD
     valueFrom:
       secretKeyRef:
         name: elasticsearch-master-credentials
@@ -86,8 +88,8 @@ config:
         tls.verify On
         tls.ca_file /fluent-bit/tls/ca.crt
 
-        HTTP_User ${ES_USERNAME}
-        HTTP_Passwd ${ES_PASSWORD}
+        HTTP_User ${ELASTIC_USERNAME}
+        HTTP_Passwd ${ELASTIC_PASSWORD}
 
     [OUTPUT]
         Name es
@@ -103,8 +105,8 @@ config:
         tls.verify On
         tls.ca_file /fluent-bit/tls/ca.crt
 
-        HTTP_User ${ES_USERNAME}
-        HTTP_Passwd ${ES_PASSWORD}
+        HTTP_User ${ELASTIC_USERNAME}
+        HTTP_Passwd ${ELASTIC_PASSWORD}
 
   customParsers: |
     [PARSER]

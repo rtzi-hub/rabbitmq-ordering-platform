@@ -36,6 +36,7 @@ kubectl apply -f "${ROOT_DIR}/secrets/rabbitmq-credentials-messaging.yaml"
 kubectl apply -f "${ROOT_DIR}/secrets/postgresql-credentials-apps.yaml"
 kubectl apply -f "${ROOT_DIR}/secrets/postgresql-credentials-database.yaml"
 kubectl apply -f "${ROOT_DIR}/secrets/grafana-credentials.yaml"
+kubectl apply -f "${ROOT_DIR}/secrets/elasticsearch-master-credentials.yaml"
 
 helm upgrade --install rabbitmq bitnami/rabbitmq \
   -f "${ROOT_DIR}/values/dev/rabbitmq.yaml" \
