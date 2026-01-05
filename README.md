@@ -304,10 +304,11 @@ Go to Discover and select:
 kubernetes-* to see application/container logs
 
 node-* to see kubelet/node logs
+This is the Results You Should see in the UI:
+<img width="1393" height="484" alt="Screenshot 2026-01-05 162054" src="https://github.com/user-attachments/assets/bd4462fe-6adb-4af0-9507-0e603080c587" />
+Example for Dashboard Sorted via Namespace:
+<img width="1901" height="751" alt="Screenshot 2025-12-31 174738" src="https://github.com/user-attachments/assets/29edcc10-b44c-41a9-a0c8-342d9eef6ee9" />
 
-(Optional) Verify indices from Elasticsearch
-kubectl -n logging exec -it elasticsearch-master-0 -- sh -c \
-'curl -k -u elastic:$(cat /run/secrets/kubernetes.io/serviceaccount/token 2>/dev/null || echo passtest) https://localhost:9200/_cat/indices?v | egrep "kubernetes-|node-"'
 
 ### Troubleshooting
 
