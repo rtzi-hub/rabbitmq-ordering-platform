@@ -1,7 +1,7 @@
 apiVersion: v2
-name: fluentbit-wrapper
+name: fluent-bit-wrapper
 version: 0.1.0
 dependencies:
-  - name: fluentbit
-    version:  0.54.0
-    repository: https://charts.bitnami.com/bitnami
+  - name: fluent-bit
+    version: "0.54.0"
+    repository: "https://fluent.github.io/helm-charts"
