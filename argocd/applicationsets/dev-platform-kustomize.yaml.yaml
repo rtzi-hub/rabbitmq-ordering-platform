@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: dev-platform-kustomize
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: namespaces
+            path: k8s/bootstrap/namespaces
+            ns: argocd
+            wave: "0"
+
+          - name: base-configmaps
+            path: k8s/configmaps
+            ns: argocd
+            wave: "5"
+
+          - name: grafana-dashboards
+            path: k8s/monitoring/grafana-dashboards
+            ns: monitoring
+            wave: "35"
+
+          - name: kibana-import
+            path: k8s/logging/kibana-import
+            ns: logging
+            wave: "46"
+
+  template:
+    metadata:
+      name: dev-{{name}}
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{wave}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/rtzi-hub/rabbitmq-ordering-platform.git
+        targetRevision: dev
+        path: "{{path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ns}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+          - PruneLast=true
