@@ -1,0 +1,114 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: dev-platform
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          # --- Bootstrap ---
+          - name: namespaces
+            path: k8s/bootstrap/namespaces
+            ns: argocd
+            wave: "0"
+
+          - name: base-configmaps
+            path: k8s/configmaps
+            ns: argocd
+            wave: "5"
+
+          # --- Messaging / DB ---
+          - name: rabbitmq
+            path: k8s/charts/rabbitmq-wrapper
+            ns: messaging
+            wave: "20"
+            valuesFile: ../../../values/dev/rabbitmq.yaml
+
+          - name: postgresql
+            path: k8s/charts/postgresql-wrapper
+            ns: database
+            wave: "20"
+            valuesFile: ../../../values/dev/postgresql.yaml
+
+          # --- Apps ---
+          - name: order-api
+            path: k8s/charts/order-api-chart
+            ns: apps
+            wave: "60"
+            valuesFile: ../../values/dev/order-api.yaml
+
+          - name: payment-service
+            path: k8s/charts/payment-service-chart
+            ns: apps
+            wave: "60"
+            valuesFile: ../../values/dev/payment-service.yaml
+
+          # --- Monitoring ---
+          - name: kube-prom-stack
+            path: k8s/charts/kube-prom-stack-wrapper
+            ns: monitoring
+            wave: "30"
+            valuesFile: ../../../values/dev/kube-prom-stack.yaml
+
+          - name: postgres-exporter
+            path: k8s/charts/postgres-exporter-wrapper
+            ns: database
+            wave: "31"
+            valuesFile: ../../../values/dev/postgresql-exporter.yaml
+
+          - name: grafana-dashboards
+            path: k8s/monitoring/grafana-dashboards
+            ns: monitoring
+            wave: "35"
+
+          # --- Logging ---
+          - name: fluent-bit
+            path: k8s/charts/fluent-bit-wrapper
+            ns: logging
+            wave: "40"
+            valuesFile: ../../../values/dev/fluentbit.yaml
+
+          - name: elasticsearch
+            path: k8s/charts/elasticsearch-wrapper
+            ns: logging
+            wave: "41"
+            valuesFile: ../../../values/dev/elasticsearch.yaml
+
+          - name: kibana
+            path: k8s/charts/kibana-wrapper
+            ns: logging
+            wave: "45"
+            valuesFile: ../../../values/dev/kibana.yaml
+
+          - name: kibana-import
+            path: k8s/logging/kibana-import
+            ns: logging
+            wave: "46"
+
+  template:
+    metadata:
+      name: dev-{{name}}
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{wave}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/<ORG>/<REPO>.git
+        targetRevision: main
+        path: "{{path}}"
+        helm:
+          valueFiles:
+            - "{{valuesFile}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ns}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - PruneLast=true
+          - ApplyOutOfSyncOnly=true

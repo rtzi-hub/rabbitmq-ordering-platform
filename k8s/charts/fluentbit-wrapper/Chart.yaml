@@ -1,0 +1,7 @@
+apiVersion: v2
+name: fluentbit-wrapper
+version: 0.1.0
+dependencies:
+  - name: fluentbit
+    version:  0.54.0
+    repository: https://charts.bitnami.com/bitnami
