@@ -3,8 +3,13 @@ kind: Job
 metadata:
   name: kibana-import-saved-objects
   namespace: logging
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: "46"
 spec:
   backoffLimit: 3
+  ttlSecondsAfterFinished: 300
   template:
     spec:
       restartPolicy: Never
@@ -28,32 +33,32 @@ spec:
               readOnly: true
           command: ["/bin/sh","-c"]
           args:
-          - |
-            set -e
-            KIBANA_URL="http://kibana-kibana:5601"
+            - |
+              set -e
+              KIBANA_URL="http://kibana-kibana:5601"
 
-            echo "Waiting for Kibana (with auth)..."
-            while true; do
-              code="$(curl -s -u "${ELASTIC_USERNAME}:${ELASTIC_PASSWORD}" \
-                -o /dev/null -w "%{http_code}" \
-                "$KIBANA_URL/api/status" || true)"
+              echo "Waiting for Kibana (with auth)..."
+              while true; do
+                code="$(curl -s -u "${ELASTIC_USERNAME}:${ELASTIC_PASSWORD}" \
+                  -o /dev/null -w "%{http_code}" \
+                  "$KIBANA_URL/api/status" || true)"
 
-              if [ "$code" = "200" ]; then
-                break
-              fi
+                if [ "$code" = "200" ]; then
+                  break
+                fi
 
-              echo "Kibana not ready yet (HTTP $code)..."
-              sleep 5
-            done
+                echo "Kibana not ready yet (HTTP $code)..."
+                sleep 5
+              done
 
-            echo "Importing saved objects..."
-            curl -sS --fail-with-body \
-              -u "${ELASTIC_USERNAME}:${ELASTIC_PASSWORD}" \
-              -H "kbn-xsrf: true" \
-              -F file=@/import/kibana-dashboards.ndjson \
-              "$KIBANA_URL/api/saved_objects/_import?overwrite=true"
+              echo "Importing saved objects..."
+              curl -sS --fail-with-body \
+                -u "${ELASTIC_USERNAME}:${ELASTIC_PASSWORD}" \
+                -H "kbn-xsrf: true" \
+                -F file=@/import/kibana-dashboards.ndjson \
+                "$KIBANA_URL/api/saved_objects/_import?overwrite=true"
 
-            echo "Done."
+              echo "Done."
       volumes:
         - name: saved-objects
           configMap:
@@ -61,10 +66,3 @@ spec:
             items:
               - key: kibana-dashboards.ndjson
                 path: kibana-dashboards.ndjson
-
-metadata:
-  annotations:
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
-    argocd.argoproj.io/sync-wave: "46"
-
