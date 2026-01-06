@@ -17,8 +17,6 @@ This project demonstrates a basic ordering and payment flow using asynchronous m
 - [Configuration](#configuration)
 - [Examples](#examples)
 - [Troubleshooting](#troubleshooting)
-- [Contributors](#contributors)
-- [License](#license)
 
 ---
 
