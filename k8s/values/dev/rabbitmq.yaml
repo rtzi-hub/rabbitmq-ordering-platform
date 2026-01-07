@@ -42,16 +42,15 @@ rabbitmq:
 
   metrics:
     enabled: true
+    default:
+      enabled: false
+    detailed:
+      enabled: true
+    perObject:
+      enabled: true
     serviceMonitor:
       labels:
         release: kube-prom-stack
-
-      default:
-        enabled: false
-      detailed:
-        enabled: true
-      perObject:
-        enabled: true
 
 
 
