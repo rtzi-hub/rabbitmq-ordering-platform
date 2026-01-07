@@ -12,7 +12,10 @@ helm repo add argo https://argoproj.github.io/argo-helm
 ```bash
 helm install argocd argo/argo-cd -f /k8s/values/dev/argocd.yaml -n argocd
 ```
-
+### Access to the argocd command
+```bash
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
 ### Run the bash script
 ```bash
 bash ../k8s/scripts/first-installation-argocd.sh
