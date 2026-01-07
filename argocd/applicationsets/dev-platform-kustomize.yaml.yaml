@@ -12,10 +12,15 @@ spec:
             ns: argocd
             wave: "0"
 
-          - name: base-configmaps
+          - name: configmaps
             path: k8s/configmaps
             ns: argocd
             wave: "5"
+
+          - name: secrets
+            path: k8s/secrets
+            ns: argocd
+            wave: "10"
 
           - name: grafana-dashboards
             path: k8s/monitoring/grafana-dashboards
