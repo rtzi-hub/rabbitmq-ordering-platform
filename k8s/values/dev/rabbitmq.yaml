@@ -10,7 +10,6 @@ image:
 
 auth:
   username: admin
-
   password: ""
   erlangCookie: ""
 
@@ -43,7 +42,7 @@ metrics:
   enabled: true
   serviceMonitor:
     labels:
-      release: kube-prometheus-stack
+      release: kube-prom-stack
 
     default:
       enabled: false
