@@ -18,6 +18,7 @@ rabbitmq:
     existingErlangSecret: rabbitmq-credentials-messaging
     existingSecretPasswordKey: password
     existingSecretErlangCookieKey: erlang-cookie
+    updatePassword: true
     vhost: "/"
   replicaCount: 1
 
