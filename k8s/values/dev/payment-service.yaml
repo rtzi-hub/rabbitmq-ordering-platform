@@ -1,7 +1,7 @@
 image:
   repository: rontz/payment-service
-  tag: "v5"
-  digest: "" 
+  tag: "sha-3702067d4fd13fd6a107f69a032c99bdafd060f0"
+  digest: ""
   pullPolicy: IfNotPresent
 
 fullnameOverride: payment-service
