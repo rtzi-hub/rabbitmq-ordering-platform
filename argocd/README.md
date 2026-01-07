@@ -1,0 +1,14 @@
+## ArgoCD First Installation Guide
+
+### Create the namespace for the argocd
+```bash
+kubectl create namespace argocd     >/dev/null 2>&1 || true
+```
+### Adding repo ArgoCD helm
+```bash
+helm repo add argo https://argoproj.github.io/argo-helm
+```
+### Installing the argo
+```bash
+helm install argocd argo/argo-cd -f /k8s/values/dev/argocd.yaml -n argocd
+```
