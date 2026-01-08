@@ -12,12 +12,12 @@ protocol: https
 # 1-node lab: don't wait for green
 clusterHealthCheckParams: "wait_for_status=yellow&timeout=30s"
 
-readinessProbe:
-  successThreshold: 1
-  initialDelaySeconds: 20
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 6
+# readinessProbe:
+#   successThreshold: 1
+#   initialDelaySeconds: 20
+#   periodSeconds: 10
+#   timeoutSeconds: 5
+#   failureThreshold: 6
 
 
 persistence:

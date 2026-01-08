@@ -2,5 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - payment-service-config.yaml
-  - postgresql-config-*.yaml
-  - rabbitmq-config-*.yaml
+  - postgresql-config-apps.yaml
+  - postgresql-config-database.yaml
+  - rabbitmq-config-apps.yaml
