@@ -6,3 +6,23 @@ kubectl delete rolebindings pre-install-kibana-kibana -n logging
 kubectl delete job pre-install-kibana-kibana -n logging
 kubectl delete secrets kibana-kibana-es-token -n logging
 kubectl delete roles post-install-kibana-kibana -n logging
+
+
+
+# Deleting the kibana resources for the logging ns
+kubectl patch -n logging configmap/kibana-kibana-helm-scripts \
+  --type='json' -p='[{"op":"remove","path":"/metadata/finalizers"}]' || true
+
+kubectl patch -n logging serviceaccount/pre-install-kibana-kibana \
+  --type='json' -p='[{"op":"remove","path":"/metadata/finalizers"}]' || true
+
+kubectl patch -n logging role.rbac.authorization.k8s.io/pre-install-kibana-kibana \
+  --type='json' -p='[{"op":"remove","path":"/metadata/finalizers"}]' || true
+
+kubectl patch -n logging rolebinding.rbac.authorization.k8s.io/pre-install-kibana-kibana \
+  --type='json' -p='[{"op":"remove","path":"/metadata/finalizers"}]' || true
+
+kubectl delete -n logging configmap/kibana-kibana-helm-scripts --grace-period=0 --force
+kubectl delete -n logging serviceaccount/pre-install-kibana-kibana --grace-period=0 --force
+kubectl delete -n logging role/pre-install-kibana-kibana --grace-period=0 --force
+kubectl delete -n logging rolebinding/pre-install-kibana-kibana --grace-period=0 --force

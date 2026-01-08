@@ -12,6 +12,11 @@ helm repo add argo https://argoproj.github.io/argo-helm
 ```bash
 helm install argocd argo/argo-cd -f /k8s/values/dev/argocd.yaml -n argocd
 ```
+
+### Get Password
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode
+```
 ### Access to the argocd command
 ```bash
 kubectl port-forward svc/argocd-server -n argocd 8080:443

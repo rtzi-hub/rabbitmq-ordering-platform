@@ -11,55 +11,55 @@ spec:
             path: k8s/charts/rabbitmq-wrapper
             ns: messaging
             wave: "20"
-            valuesFile: ../../values/dev/rabbitmq.yaml
+            valuesFile: k8s/values/dev/rabbitmq.yaml
 
           - name: postgresql
             path: k8s/charts/postgresql-wrapper
             ns: database
             wave: "20"
-            valuesFile: ../../values/dev/postgresql.yaml
+            valuesFile: k8s/values/dev/postgresql.yaml
 
           - name: order-api
             path: k8s/charts/order-api-chart
             ns: apps
             wave: "60"
-            valuesFile: ../../values/dev/order-api.yaml
+            valuesFile: k8s/values/dev/order-api.yaml
 
           - name: payment-service
             path: k8s/charts/payment-service-chart
             ns: apps
             wave: "60"
-            valuesFile: ../../values/dev/payment-service.yaml
+            valuesFile: k8s/values/dev/payment-service.yaml
 
           - name: kube-prom-stack
             path: k8s/charts/kube-prom-stack-wrapper
             ns: monitoring
             wave: "30"
-            valuesFile: ../../values/dev/kube-prom-stack.yaml
+            valuesFile: k8s/values/dev/kube-prom-stack.yaml
 
           - name: postgres-exporter
             path: k8s/charts/postgres-exporter-wrapper
             ns: database
             wave: "31"
-            valuesFile: ../../monitoring/prom-exporters/postgresql-exporter.yaml
+            valuesFile: k8s/monitoring/prom-exporters/postgresql-exporter.yaml
 
           - name: fluent-bit
             path: k8s/charts/fluent-bit-wrapper
             ns: logging
             wave: "40"
-            valuesFile: ../../values/dev/fluentbit.yaml
+            valuesFile: k8s/values/dev/fluentbit.yaml
 
           - name: elasticsearch
             path: k8s/charts/elasticsearch-wrapper
             ns: logging
             wave: "41"
-            valuesFile: ../../values/dev/elasticsearch.yaml
+            valuesFile: k8s/values/dev/elasticsearch.yaml
 
           - name: kibana
             path: k8s/charts/kibana-wrapper
             ns: logging
             wave: "45"
-            valuesFile: ../../values/dev/kibana.yaml
+            valuesFile: k8s/values/dev/kibana.yaml
 
   template:
     metadata:
