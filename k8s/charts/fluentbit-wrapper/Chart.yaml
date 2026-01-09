@@ -3,6 +3,5 @@ name: fluentbit-wrapper
 version: 0.1.0
 dependencies:
   - name: fluent-bit
-    alias: fluentbit
     version: "0.54.0"
     repository: "https://fluent.github.io/helm-charts"
