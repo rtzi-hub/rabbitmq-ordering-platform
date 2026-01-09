@@ -26,3 +26,8 @@ kubectl delete -n logging configmap/kibana-kibana-helm-scripts --grace-period=0 
 kubectl delete -n logging serviceaccount/pre-install-kibana-kibana --grace-period=0 --force
 kubectl delete -n logging role/pre-install-kibana-kibana --grace-period=0 --force
 kubectl delete -n logging rolebinding/pre-install-kibana-kibana --grace-period=0 --force
+
+
+
+#Cleanup application
+kubectl -n argocd patch application dev-kibana -p '{"metadata":{"finalizers":[]}}' --type=merge
