@@ -6,7 +6,10 @@ namespace: monitoring
 configMapGenerator:
   - name: grafana-dashboards
     files:
-      - dashboards/
+      - k8s-platform.json
+      - postgres.json
+      - rabbitmq.json
+      - vm-node.json
 generatorOptions:
   disableNameSuffixHash: true
 
