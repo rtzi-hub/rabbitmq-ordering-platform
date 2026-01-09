@@ -43,7 +43,7 @@ spec:
             wave: "31"
             valuesFile: ../../monitoring/prom-exporters/postgresql-exporter.yaml
 
-          - name: fluent-bit
+          - name: fluentbit
             path: k8s/charts/fluentbit-wrapper
             ns: logging
             wave: "40"
