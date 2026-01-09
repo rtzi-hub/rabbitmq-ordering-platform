@@ -8,6 +8,6 @@ resources:
 configMapGenerator:
   - name: kibana-saved-objects
     files:
-      - kibana-dashboards.ndjson=kibana-dashboards.ndjson
+      - kibana-dashboards.ndjson
 generatorOptions:
   disableNameSuffixHash: true
