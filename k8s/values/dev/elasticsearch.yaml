@@ -1,28 +1,15 @@
-clusterName: "elasticsearch"
-nodeGroup: "master"
-
-roles: [master, data, ingest]
 replicas: 1
+clusterName: "elasticsearch"
 minimumMasterNodes: 1
-
-# REQUIRED for elastic/kibana chart hooks:
-createCert: true
+roles:
+  - master
+  - data
+  - ingest
+nodeGroup: "master"  # StatefulSet suffix: elasticsearch-master
 protocol: https
-
-# 1-node lab: don't wait for green
-clusterHealthCheckParams: "wait_for_status=yellow&timeout=30s"
-
-# readinessProbe:
-#   successThreshold: 1
-#   initialDelaySeconds: 20
-#   periodSeconds: 10
-#   timeoutSeconds: 5
-#   failureThreshold: 6
-
-
+createCert: true
 persistence:
   enabled: false
-
 esJavaOpts: "-Xms512m -Xmx512m"
 resources:
   requests:
@@ -31,16 +18,12 @@ resources:
   limits:
     cpu: "1000m"
     memory: "1Gi"
-
 antiAffinity: "soft"
-
 sysctlInitContainer:
   enabled: true
 sysctlVmMaxMapCount: 262144
-
 secret:
   enabled: false
-
 extraEnvs:
   - name: ELASTIC_USERNAME
     valueFrom:
@@ -52,3 +35,12 @@ extraEnvs:
       secretKeyRef:
         name: elasticsearch-master-credentials
         key: password
+clusterHealthCheckParams: "wait_for_status=yellow&timeout=60s"
+readinessProbe:
+  initialDelaySeconds: 60
+  periodSeconds: 20
+  timeoutSeconds: 10
+  failureThreshold: 30
+esConfig:
+  elasticsearch.yml: |
+    discovery.type: single-node
