@@ -5,12 +5,15 @@ roles:
   - master
   - data
   - ingest
-nodeGroup: "master"  # StatefulSet suffix: elasticsearch-master
+
 protocol: https
 createCert: true
+
 persistence:
   enabled: false
+
 esJavaOpts: "-Xms512m -Xmx512m"
+
 resources:
   requests:
     cpu: "250m"
@@ -18,10 +21,12 @@ resources:
   limits:
     cpu: "1000m"
     memory: "1Gi"
+
 antiAffinity: "soft"
 sysctlInitContainer:
   enabled: true
 sysctlVmMaxMapCount: 262144
+
 secret:
   enabled: false
 extraEnvs:
@@ -35,12 +40,14 @@ extraEnvs:
       secretKeyRef:
         name: elasticsearch-master-credentials
         key: password
+
 clusterHealthCheckParams: "wait_for_status=yellow&timeout=60s"
 readinessProbe:
   initialDelaySeconds: 60
   periodSeconds: 20
   timeoutSeconds: 10
   failureThreshold: 30
+
 esConfig:
   elasticsearch.yml: |
     discovery.type: single-node
