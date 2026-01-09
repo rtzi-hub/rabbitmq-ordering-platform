@@ -1,4 +1,4 @@
-fluent-bit:
+fluentbit:
   kind: DaemonSet
 
   tolerations:
