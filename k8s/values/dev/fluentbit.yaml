@@ -1,117 +1,118 @@
-kind: DaemonSet
+fluent-bit:
+  kind: DaemonSet
 
-tolerations:
-  - key: "node-role.kubernetes.io/control-plane"
-    operator: "Exists"
-    effect: "NoSchedule"
-  - key: "node-role.kubernetes.io/master"
-    operator: "Exists"
-    effect: "NoSchedule"
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/master"
+      operator: "Exists"
+      effect: "NoSchedule"
 
-# ---- 1) Mount Elasticsearch CA certificate (created by elastic/elasticsearch chart) ----
-extraVolumes:
-  - name: es-ca
-    secret:
-      secretName: elasticsearch-master-certs
-      items:
-        - key: ca.crt
-          path: ca.crt
+  # ---- 1) Mount Elasticsearch CA certificate (created by elastic/elasticsearch chart) ----
+  extraVolumes:
+    - name: es-ca
+      secret:
+        secretName: elasticsearch-master-certs
+        items:
+          - key: ca.crt
+            path: ca.crt
 
-extraVolumeMounts:
-  - name: es-ca
-    mountPath: /fluent-bit/tls
-    readOnly: true
+  extraVolumeMounts:
+    - name: es-ca
+      mountPath: /fluent-bit/tls
+      readOnly: true
 
-# Provide credentials as env vars (from secret)
-env:
-  - name: ELASTIC_USERNAME
-    valueFrom:
-      secretKeyRef:
-        name: elasticsearch-master-credentials
-        key: username
-  - name: ELASTIC_PASSWORD
-    valueFrom:
-      secretKeyRef:
-        name: elasticsearch-master-credentials
-        key: password
+  # Provide credentials as env vars (from secret)
+  env:
+    - name: ELASTIC_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: elasticsearch-master-credentials
+          key: username
+    - name: ELASTIC_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: elasticsearch-master-credentials
+          key: password
 
-config:
-  service: |
-    [SERVICE]
-        Daemon Off
-        Flush 1
-        Log_Level info
-        Parsers_File /fluent-bit/etc/parsers.conf
-        Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
-        HTTP_Server On
-        HTTP_Listen 0.0.0.0
-        HTTP_Port 2020
-        Health_Check On
+  config:
+    service: |
+      [SERVICE]
+          Daemon Off
+          Flush 1
+          Log_Level info
+          Parsers_File /fluent-bit/etc/parsers.conf
+          Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
+          HTTP_Server On
+          HTTP_Listen 0.0.0.0
+          HTTP_Port 2020
+          Health_Check On
 
-  inputs: |
-    [INPUT]
-        Name tail
-        Path /var/log/containers/*.log
-        multiline.parser docker, cri
-        Tag kube.*
-        Mem_Buf_Limit 5MB
-        Skip_Long_Lines On
+    inputs: |
+      [INPUT]
+          Name tail
+          Path /var/log/containers/*.log
+          multiline.parser docker, cri
+          Tag kube.*
+          Mem_Buf_Limit 5MB
+          Skip_Long_Lines On
 
-    [INPUT]
-        Name systemd
-        Tag host.*
-        Systemd_Filter _SYSTEMD_UNIT=kubelet.service
-        Read_From_Tail On
+      [INPUT]
+          Name systemd
+          Tag host.*
+          Systemd_Filter _SYSTEMD_UNIT=kubelet.service
+          Read_From_Tail On
 
-  filters: |
-    [FILTER]
-        Name kubernetes
-        Match kube.*
-        Merge_Log On
-        Keep_Log Off
-        K8S-Logging.Parser On
-        K8S-Logging.Exclude On
+    filters: |
+      [FILTER]
+          Name kubernetes
+          Match kube.*
+          Merge_Log On
+          Keep_Log Off
+          K8S-Logging.Parser On
+          K8S-Logging.Exclude On
 
-  # ---- 3) IMPORTANT: switch Fluent Bit output to HTTPS + CA + basic auth ----
-  outputs: |
-    [OUTPUT]
-        Name es
-        Match kube.*
-        Host elasticsearch-master
-        Port 9200
-        Logstash_Format On
-        Logstash_Prefix kubernetes
-        Suppress_Type_Name On
-        Retry_Limit False
+    # ---- 3) IMPORTANT: switch Fluent Bit output to HTTPS + CA + basic auth ----
+    outputs: |
+      [OUTPUT]
+          Name es
+          Match kube.*
+          Host elasticsearch-master
+          Port 9200
+          Logstash_Format On
+          Logstash_Prefix kubernetes
+          Suppress_Type_Name On
+          Retry_Limit False
 
-        tls On
-        tls.verify On
-        tls.ca_file /fluent-bit/tls/ca.crt
+          tls On
+          tls.verify On
+          tls.ca_file /fluent-bit/tls/ca.crt
 
-        HTTP_User ${ELASTIC_USERNAME}
-        HTTP_Passwd ${ELASTIC_PASSWORD}
+          HTTP_User ${ELASTIC_USERNAME}
+          HTTP_Passwd ${ELASTIC_PASSWORD}
 
-    [OUTPUT]
-        Name es
-        Match host.*
-        Host elasticsearch-master
-        Port 9200
-        Logstash_Format On
-        Logstash_Prefix node
-        Suppress_Type_Name On
-        Retry_Limit False
+      [OUTPUT]
+          Name es
+          Match host.*
+          Host elasticsearch-master
+          Port 9200
+          Logstash_Format On
+          Logstash_Prefix node
+          Suppress_Type_Name On
+          Retry_Limit False
 
-        tls On
-        tls.verify On
-        tls.ca_file /fluent-bit/tls/ca.crt
+          tls On
+          tls.verify On
+          tls.ca_file /fluent-bit/tls/ca.crt
 
-        HTTP_User ${ELASTIC_USERNAME}
-        HTTP_Passwd ${ELASTIC_PASSWORD}
+          HTTP_User ${ELASTIC_USERNAME}
+          HTTP_Passwd ${ELASTIC_PASSWORD}
 
-  customParsers: |
-    [PARSER]
-        Name docker_no_time
-        Format json
-        Time_Keep Off
-        Time_Key time
-        Time_Format %Y-%m-%dT%H:%M:%S.%L
+    customParsers: |
+      [PARSER]
+          Name docker_no_time
+          Format json
+          Time_Keep Off
+          Time_Key time
+          Time_Format %Y-%m-%dT%H:%M:%S.%L
