@@ -256,7 +256,7 @@ Example for Dashboard Sorted via Namespace:
 - Fluent Bit 401: Ensure correct credentials from elasticsearch-master-credentials secret.
 - Stuck ArgoCD App:
   ```bash
-  kubectl patch application dev-kibana -n argocd --type=merge -p '{"metadata":{"finalizers":[]}}'
+  kubectl patch application <app-name> -n argocd --type=merge -p '{"metadata":{"finalizers":[]}}'
   ```
 - Check Logs/Events:
   ```bash
