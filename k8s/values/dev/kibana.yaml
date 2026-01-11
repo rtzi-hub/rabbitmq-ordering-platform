@@ -152,7 +152,6 @@ kibana:
     #    hosts:
     #      - chart-example.local
 
-  healthCheckPath: "/api/status"
   readinessProbe:
     failureThreshold: 3
     initialDelaySeconds: 10
