@@ -317,6 +317,7 @@ Example for Dashboard Sorted via Namespace:
 bash ./k8s/scripts/run-applicationsets.sh
 ```
 ### Argocd Dashboard view
+<img width="1900" height="907" alt="image" src="https://github.com/user-attachments/assets/9f9fc548-8e27-4c56-9f58-10f7d00ed713" />
 <img width="1899" height="911" alt="image" src="https://github.com/user-attachments/assets/70cda8d9-2ec6-4dae-b8e6-18481753a062" />
 
 ### Troubleshooting
