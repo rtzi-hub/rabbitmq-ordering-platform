@@ -312,9 +312,14 @@ Example for Dashboard Sorted via Namespace:
 <img width="1901" height="751" alt="Screenshot 2025-12-31 174738" src="https://github.com/user-attachments/assets/29edcc10-b44c-41a9-a0c8-342d9eef6ee9" />
 
 
-
+### Reveal the first password command
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
 ### Argocd Deploying
 ```bash
+kubectl -n argocd port-forward svc/argocd-server 8085:443
+
 bash ./k8s/scripts/run-applicationsets.sh
 ```
 ### Argocd Dashboard view
