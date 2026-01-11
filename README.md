@@ -1,6 +1,6 @@
 # RabbitMQ Ordering Platform
 
-A microservices demo for an online ticket ordering system built using RabbitMQ, Node.js, PostgreSQL, and Kubernetes. It illustrates an event-driven architecture with clear separation of services, manual payment handling, and optional observability tools like Prometheus/Grafana and EFK (Elasticsearch, Fluent Bit, Kibana).
+A microservices demo for an online ticket ordering system built using RabbitMQ, Node.js, PostgreSQL, Kubernetes, and ArgoCD. It illustrates an event-driven architecture with clear separation of services, manual payment handling, and observability tools like Prometheus/Grafana and EFK (Elasticsearch, Fluent Bit, Kibana).
 
 ## Table of Contents
 
