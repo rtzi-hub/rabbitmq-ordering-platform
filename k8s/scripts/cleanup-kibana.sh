@@ -31,6 +31,8 @@ kubectl delete -n logging job/kibana-import-saved-objects --grace-period=0 --for
 
 #Cleanup application
 kubectl -n argocd patch application dev-kibana -p '{"metadata":{"finalizers":[]}}' --type=merge
+kubectl -n argocd patch application dev-kibana-import -p '{"metadata":{"finalizers":[]}}' --type=merge
+
 
 # logging namespace
 kubectl -n logging patch job kibana-import-saved-objects \
