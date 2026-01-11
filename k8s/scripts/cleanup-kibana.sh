@@ -38,5 +38,7 @@ kubectl -n argocd patch application dev-kibana-import -p '{"metadata":{"finalize
 kubectl -n logging patch job kibana-import-saved-objects \
   --type=merge -p '{"metadata":{"finalizers":[]}}'
 
+ kubectl -n logging patch job pre-install-kibana-kibana \
+  --type=merge -p '{"metadata":{"finalizers":[]}}'
 #Delete namespace
  kubectl delete namespace logging --force --grace-period=0
