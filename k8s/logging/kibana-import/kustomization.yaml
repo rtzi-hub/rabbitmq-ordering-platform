@@ -4,6 +4,7 @@ namespace: logging
 
 resources:
   - kibana-import-job.yaml
+  - ../kibana-rbac.yaml
 
 configMapGenerator:
   - name: kibana-saved-objects
