@@ -13,36 +13,17 @@ This project demonstrates a basic ordering and payment flow using asynchronous m
 - [Installation](#installation)
 - [Usage](#usage)
 - [Features](#features)
+- [RabbitMQ](#rabbitmq)
 - [Database Schema](#database-schema)
 - [Configuration](#configuration)
+- [Monitoring (Prometheus + Grafana)](#monitoring-prometheus--grafana)
+- [Logging (EFK: Elasticsearch + Fluent Bit + Kibana)](#logging-efk-elasticsearch--fluent-bit--kibana)
+- [ArgoCD Deploying](#argocd-deploying)
 - [Examples](#examples)
+- [Cleanup](#cleanup)
 - [Troubleshooting](#troubleshooting)
 
 ---
-
-## Architecture
-
-User → order-api (HTTP)
-
-↓
-
-Inventory Reservation
-
-↓
-
-Publishes order.created to RabbitMQ
-
-↓
-
-payment-service consumes order.created
-
-↓
-
-Creates a PENDING payment
-
-↓
-
-Manual approval/rejection via HTTP
 
 ### Flow Overview
 
@@ -80,21 +61,41 @@ Manual approval/rejection via HTTP
 
 ### Project structure
 ```bash
-rabbitmq-ordering-platform/ 
-└─ app/   
-   ├─ order-api/                 # Order HTTP API
-   └─ payment-service/           # Payment worker
-├─ ci-test/ 
-└─ k8s/
-   ├─ charts/                 # Local Helm charts (order-api, payment-service, etc.)
-   ├─ configmaps/             # Shared nonsecret configuration (RabbitMQ, Postgres)
-   ├─ secrets/                # Secrets manifests
-   ├─ values/
-   │  └─ dev/                 # Dev environment values (RabbitMQ, Postgres, services)
-   └─ scripts/
-      ├─ run-dev.sh           # Spin up full dev stack
-      ├─ cleanup-kibana.sh 
-      └─ cleanup-dev.sh       # (optional) tear down / reset dev stack
+rabbitmq-ordering-platform/
+├─ .github/                      # GitHub workflows / CI helpers
+├─ app/
+│  ├─ order-api/                 # Order HTTP API
+│  └─ payment-service/           # Payment worker
+├─ archive/                      # Old / extra files (optional)
+├─ argocd/
+│  ├─ applicationsets/           # ArgoCD ApplicationSets
+│  └─ README.md                  # ArgoCD notes / usage
+├─ ci-test/                      # CI / test scripts
+├─ k8s/
+│  ├─ bootstrap/                 # Cluster bootstrap manifests (namespaces, base setup)
+│  ├─ charts/                    # Local Helm charts (order-api, payment-service, etc.)
+│  ├─ configmaps/                # Shared nonsecret configuration (RabbitMQ, Postgres, etc.)
+│  ├─ logging/                   # EFK logging stack manifests / dashboards
+│  ├─ monitoring/                # Prometheus/Grafana manifests / dashboards
+│  ├─ scripts/
+│  │  ├─ run-dev.sh              # Spin up full dev stack
+│  │  ├─ cleanup-kibana.sh       # Reset / cleanup Kibana (logging)
+│  │  └─ cleanup-dev.sh          # Tear down / reset dev stack
+│  ├─ secrets/                   # Secrets manifests
+│  └─ values/
+│     ├─ dev/                    # Dev environment values
+│     │  ├─ argocd.yaml
+│     │  ├─ elasticsearch.yaml
+│     │  ├─ fluentbit.yaml
+│     │  ├─ kibana.yaml
+│     │  ├─ kube-prom-stack.yaml
+│     │  ├─ order-api.yaml
+│     │  ├─ payment-service.yaml
+│     │  ├─ postgresql.yaml
+│     │  └─ rabbitmq.yaml
+│     └─ prod/                   # Prod environment values (if used)
+├─ .gitignore
+└─ README.md
 ```
 
 ---
