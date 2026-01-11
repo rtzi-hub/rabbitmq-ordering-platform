@@ -2143,7 +2143,7 @@ server:
   # Server container ports
   containerPorts:
     # -- Server container port
-    server: 8080
+    server: 8085
     # -- Metrics container port
     metrics: 8083
 
