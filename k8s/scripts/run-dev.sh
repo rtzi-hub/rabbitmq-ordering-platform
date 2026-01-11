@@ -101,6 +101,5 @@ kubectl -n logging create configmap kibana-saved-objects \
   --from-file=kibana-dashboards.ndjson="${ROOT_DIR}/logging/kibana-dashboards.ndjson" \
   -o yaml --dry-run=client | kubectl apply -f -
 
-kubectl -n logging delete job kibana-import-saved-objects --ignore-not-found
 kubectl -n logging apply -f "${ROOT_DIR}/logging/kibana-import-job.yaml"
 

@@ -111,7 +111,16 @@ kibana:
   #   image: busybox
   #   command: ['echo', 'hey']
 
-  extraInitContainers: []
+
+  extraInitContainers:
+    - name: delete-old-es-token
+      image: bitnami/kubectl:latest
+      command:
+        - sh
+        - -c
+        - |
+          echo "Deleting stale Kibana ES token (if any)…"
+          kubectl -n logging delete secret kibana-kibana-es-token --ignore-not-found=true
   # - name: dummy-init
   #   image: busybox
   #   command: ['echo', 'hey']
