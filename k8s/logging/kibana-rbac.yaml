@@ -28,3 +28,29 @@ subjects:
 - kind: ServiceAccount
   name: kibana
   namespace: logging
+---
+#Deleting permission when resync 
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kibana-pre-install-secret-delete
+  namespace: logging
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames: ["kibana-kibana-es-token"]
+  verbs: ["delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kibana-pre-install-secret-delete
+  namespace: logging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kibana-pre-install-secret-delete
+subjects:
+- kind: ServiceAccount
+  name: pre-install-kibana-kibana
+  namespace: logging
