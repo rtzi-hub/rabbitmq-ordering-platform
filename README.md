@@ -320,12 +320,18 @@ bash ./k8s/scripts/run-applicationsets.sh
 <img width="1900" height="907" alt="image" src="https://github.com/user-attachments/assets/9f9fc548-8e27-4c56-9f58-10f7d00ed713" />
 <img width="1899" height="911" alt="image" src="https://github.com/user-attachments/assets/70cda8d9-2ec6-4dae-b8e6-18481753a062" />
 
+### Cleanup argocd applications
+```bash
+bash ./k8s/scripts/cleanup-applicationset.sh 
+```
 ### Troubleshooting
-
+fluentbit:
 If Fluent Bit shows HTTP status=401 ... missing authentication credentials:
-
 Ensure Fluent Bit outputs use HTTP_User ${ELASTIC_USERNAME} / HTTP_Passwd ${ELASTIC_PASSWORD}
-
 Ensure the Fluent Bit pod has these env vars from the elasticsearch-master-credentials secret.
 
-###
+Argocd Applications delete stuck (For example if you see that after running cleanup applicationsets):
+The 'dev-kibana' is still alive and outofsync run this command (Because the namespace logging isn't exist use the patch command):
+```bash
+kubectl patch application dev-kibana -n argocd --type=merge -p '{"metadata":{"finalizers":[]}}'
+```
