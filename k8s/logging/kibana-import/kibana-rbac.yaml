@@ -12,7 +12,7 @@ metadata:
 rules:
 - apiGroups: [""]
   resources: ["secrets"]
-  resourceNames: ["kibana-kibana-es-token"]
+  resourceNames: ["kibana-kibana-es-token","elasticsearch-master-credentials"]
   verbs: ["get", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -29,7 +29,7 @@ subjects:
   name: kibana
   namespace: logging
 ---
-#Deleting permission when resync 
+#Deleting permission when resync
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
