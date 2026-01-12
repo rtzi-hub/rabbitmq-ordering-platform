@@ -50,6 +50,9 @@ grafana:
   initChownData:
     enabled: false
 
+  adminUser: null
+  adminPassword: null
+
   podSecurityContext:
     fsGroup: 472
     fsGroupChangePolicy: "OnRootMismatch"
@@ -102,6 +105,17 @@ grafana:
       provider:
         allowUiUpdates: true
         foldersFromFilesStructure: true
+    env:
+      - name: REQ_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: grafana-credentials
+            key: admin-user
+      - name: REQ_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: grafana-credentials
+            key: admin-password
 
 # Node exporter / kube-state-metrics resources
 kube-state-metrics:

@@ -164,7 +164,7 @@ Pods list of the lab results:
    kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
    ```
 
-3. Access Grafana: http://localhost:3000  
+3. Access Grafana: http://localhost:3000
    - Default credentials: admin/prom-operator
 
 4. Dashboards Provided:
@@ -203,7 +203,7 @@ Landing page example for the result of the rejected payment + the approved payme
    kubectl -n logging port-forward svc/kibana-kibana 5601:5601
    ```
 
-3. Access Kibana: http://localhost:5601  
+3. Access Kibana: http://localhost:5601
    - Use credentials from elasticsearch-master-credentials secret.
 
 4. Create Data Views:
@@ -223,6 +223,8 @@ Example for Dashboard Sorted via Namespace:
 1. Install ArgoCD and access the UI:
    ```bash
    kubectl -n argocd port-forward svc/argocd-server 8085:443
+   kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+
    ```
 
 2. Run ApplicationSets:
@@ -257,6 +259,8 @@ Example for Dashboard Sorted via Namespace:
 - Stuck ArgoCD App:
   ```bash
   kubectl patch application <app-name> -n argocd --type=merge -p '{"metadata":{"finalizers":[]}}'
+  #Usually dev-kibana getting stuck
+  kubectl patch application dev-kibana -n argocd --type=merge -p '{"metadata":{"finalizers":[]}}'
   ```
 - Check Logs/Events:
   ```bash
