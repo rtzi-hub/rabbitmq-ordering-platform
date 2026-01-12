@@ -54,19 +54,6 @@ grafana:
     userKey: admin-user
     passwordKey: admin-password
 
-  extraEnvs:
-    - name: GF_SECURITY_ADMIN_USER
-      valueFrom:
-        secretKeyRef:
-          name: grafana-credentials
-          key: admin-user
-    - name: GF_SECURITY_ADMIN_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: grafana-credentials
-          key: admin-password
-
-
   podSecurityContext:
     fsGroup: 472
     fsGroupChangePolicy: "OnRootMismatch"
@@ -96,7 +83,7 @@ grafana:
 
 
   persistence:
-    enabled: true
+    enabled: false
     type: pvc
     size: 2Gi
     storageClassName: local-path
