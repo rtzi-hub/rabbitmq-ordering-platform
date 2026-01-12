@@ -47,10 +47,8 @@ grafana:
     existingSecret: "grafana-credentials"
     userKey: admin-user
     passwordKey: admin-password
-  adminUser: ""
-  adminPassword: ""
   initChownData:
-  enabled: false
+    enabled: false
 
   podSecurityContext:
     fsGroup: 472
