@@ -53,16 +53,20 @@ grafana:
     existingSecret: grafana-credentials
     userKey: admin-user
     passwordKey: admin-password
-  forceAdminPasswordReset: true  # Triggers DB reset
+  envFrom:
+    - secretRef:
+        name: grafana-credentials
   env:
-    GF_SECURITY_ADMIN_USER:
-      secretKeyRef:
-        name: grafana-credentials
-        key: admin-user
-    GF_SECURITY_ADMIN_PASSWORD:
-      secretKeyRef:
-        name: grafana-credentials
-        key: admin-password
+    - name: GF_SECURITY_ADMIN_USER
+      valueFrom:
+        secretKeyRef:
+          name: grafana-credentials
+          key: admin-user
+    - name: GF_SECURITY_ADMIN_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: grafana-credentials
+          key: admin-password
 
 
   podSecurityContext:
