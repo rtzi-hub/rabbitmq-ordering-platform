@@ -161,7 +161,7 @@ Pods list of the lab results:
 
 2. Port-forward Grafana:
    ```bash
-   kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
+   kubectl -n monitoring port-forward svc/kube-prom-stack-grafana 3000:80
    ```
 
 3. Access Grafana: http://localhost:3000
