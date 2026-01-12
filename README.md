@@ -145,7 +145,7 @@ cd rabbitmq-ordering-platform/k8s/scripts
    ```
 
 Pods list of the lab results:
-<img width="726" height="266" alt="image" src="https://github.com/user-attachments/assets/94e4d83b-f4f6-4f3b-9c0e-d954979e0091" />
+<img width="886" height="566" alt="image" src="https://github.com/user-attachments/assets/1c427d33-222c-45cd-be38-ff0458c7c7a6" />
 
 8. Refresh the UI to see updated statuses.
 
