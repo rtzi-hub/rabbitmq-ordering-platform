@@ -43,16 +43,14 @@ alertmanager:
 # Grafana config
 grafana:
   enabled: true
+  admin:
+    existingSecret: "grafana-credentials"
+    userKey: admin-user
+    passwordKey: admin-password
   adminUser: ""
   adminPassword: ""
   initChownData:
-    enabled: false
-
-  admin:
-    useExistingSecret: true
-    existingSecret: grafana-credentials
-    userKey: admin-user
-    passwordKey: admin-password
+  enabled: false
 
   podSecurityContext:
     fsGroup: 472
@@ -83,7 +81,7 @@ grafana:
 
 
   persistence:
-    enabled: false
+    enabled: true
     type: pvc
     size: 2Gi
     storageClassName: local-path
