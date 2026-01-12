@@ -182,7 +182,7 @@ Landing page example for the result of the rejected payment + the approved payme
 
 ### K8s & Platform Overview
 
-<img width="1007" height="656" alt="image" src="https://github.com/user-attachments/assets/802a5ba4-da9c-47b8-96a1-f181309652d8" />
+<img width="1014" height="652" alt="image" src="https://github.com/user-attachments/assets/bd1c0299-a0a3-4c4a-b028-c39345072a17" />
 
 
 ### DB Overview
