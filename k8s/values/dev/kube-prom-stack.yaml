@@ -53,10 +53,8 @@ grafana:
     existingSecret: grafana-credentials
     userKey: admin-user
     passwordKey: admin-password
-  envFrom:
-    - secretRef:
-        name: grafana-credentials
-  env:
+
+  extraEnvs:
     - name: GF_SECURITY_ADMIN_USER
       valueFrom:
         secretKeyRef:
