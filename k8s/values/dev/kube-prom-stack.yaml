@@ -49,6 +49,7 @@ grafana:
     enabled: false
 
   admin:
+    useExistingSecret: true
     existingSecret: grafana-credentials
     userKey: admin-user
     passwordKey: admin-password
@@ -130,6 +131,4 @@ prometheus-node-exporter:
     limits:
       cpu: 100m
       memory: 128Mi
-
-
 
